@@ -6,5 +6,4 @@ cs473 Semester Project
 Dependencies / Requirements
 ---------------------------
 * OpenCV
-* C++
-
+* Python 2.7
