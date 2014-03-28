@@ -19,10 +19,13 @@ class ObjectDetector(object):
                 the object for detection.
         fg_mask: Foreground mask, with white pixels representing hypothesized 
                  foreground and black pixels representing definite background.
-        ignore_mask: Foreground ignore mask where white pixels represent areas 
+        ignore_mask: Foreground ignore mask, where white pixels represent areas 
                      to treat automatically as background. This can be used to 
                      prevent arms from being treated as part of the foreground 
                      object.
+        rect_mask: Foreground rectangle mask, where black pixels represennt
+                   areas to treat automatically as background. This can be used
+                   to establish a region of focus.
     '''
     
     def __init__(self):
@@ -34,11 +37,13 @@ class ObjectDetector(object):
         self.fg_img = None
         self.fg_mask = None
         self.ignore_mask = None
+        self.rect_mask = None
         return
         
     def load_image(self, bg_path, fg_path):
         '''
-        Sets a new background and foreground image for object detection.
+        Sets a new background and foreground image for object detection. The
+        images should have the same pixel dimensions.
         
         Returns:
             True if both files exist and are read successfully; false otherwise.
@@ -95,6 +100,28 @@ class ObjectDetector(object):
             return False
         return True
 
+    def set_fg_rectangle(self, x, y, width, height):
+        '''
+        Sets the foreground rectangle mask to all pixels within the bounds of a
+        user-specified rectangle. 
+        
+        Args:
+            x: the x-value of the top-left pixel of the rectangle.
+            y: the y-value of the top-left pixel of the rectangle.
+            width: total width of rectangle.
+            height: total height of rectangle.
+            
+        Returns:
+            True if foreground rectangle mask set successfully; false otherwise.
+        '''
+        if self.fg_mask is None:
+            return False
+        self.rect_mask = numpy.zeros(self.fg_mask.shape, numpy.uint8)
+        cv2.rectangle(self.rect_mask, (x,y), (x+width, y+height), 
+                      (255, 255 ,255), cv2.cv.CV_FILLED)
+        return True
+    
+
     def ignore_fg_color(self, color_min, color_max):
         '''
         Sets the foreground ignore mask to the all pixels falling between two
@@ -146,7 +173,7 @@ class ObjectDetector(object):
         
         The object is assumed to be the largest contiguous foreground area
         according to the foreground image mask, after discounting areas marked
-        as background by the ignore mask.
+        as background by the ignore mask and rectangle mask.
         
         Returns:
             A rectangle represented by the tuple (x,y,w,h), where (x,y) are the
@@ -160,6 +187,8 @@ class ObjectDetector(object):
         fg_mask = self.fg_mask.copy()
         if not self.ignore_mask is None:
             fg_mask = cv2.bitwise_and(fg_mask,cv2.bitwise_not(self.ignore_mask))
+        if not self.rect_mask is None:
+            fg_mask = cv2.bitwise_and(fg_mask, self.rect_mask)
         contours, __ = cv2.findContours(fg_mask, cv2.RETR_TREE,
                                         cv2.CHAIN_APPROX_SIMPLE)
         areas = [cv2.contourArea(c) for c in contours]
@@ -186,12 +215,14 @@ def main():
         obj.load_image(bg_file, fg_file)
         if len(test_param) > 3 and test_param[3]:
             obj.ignore_fg_color([0, 0, 0], [180, 255, 96]) # dark colors
-            cv2.imwrite(out_prefix + "__ignore.png", obj.ignore_mask)
+            cv2.imwrite(out_prefix + "__ignore.png", obj.ignore_mask)     
+            #obj.set_fg_rectangle(500, 100, 200, 200)
+            #cv2.imwrite(out_prefix + "_rectangle.png", obj.rect_mask) 
         for method in ["simple", "MOG", "MOG2"]:
             obj.create_fg_mask(method)  
             x, y, width, height = obj.get_object_rectangle()
             cv2.rectangle(obj.fg_mask, (x,y), (x+width,y+height), (128,128,128))
-            cv2.imwrite(out_prefix + "_" + method + ".png", obj.fg_mask)
+            cv2.imwrite(out_prefix + "_" + method + ".png", obj.fg_mask) 
             print "Rectangle (" + method + "):", obj.get_object_rectangle() 
         print   
     return
