@@ -66,12 +66,18 @@ class BaxterObject(object):
         return True
     
     def get_box_size(self):
+        if self.box_obj is None:
+            return (0, 0)
         return self.box_obj.get_object_rectangle()[-2:]
     
     def get_uncompressed_size(self):
+        if self.uncompress_obj is None:
+            return (0, 0)
         return self.uncompress_obj.get_object_rectangle()[-2:]
     
     def get_compressed_size(self):
+        if self.compress_obj is None:
+            return (0, 0)
         return self.compress_obj.get_object_rectangle()[-2:]
     
     def check_uncompressed_fit(self):
