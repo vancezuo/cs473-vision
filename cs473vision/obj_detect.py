@@ -7,10 +7,11 @@ Created on Feb 28, 2014
 import numpy as np
 import cv2
 import os
+from math import sqrt
 
-class ObjectDetector(object):
+class SegmentedObject(object):
     '''
-    An ObjectDetector attempts to detect and segment a objects from an image,
+    An SegmentedObject attempts to represent an object from an image,
     based on a reference background image.
     
     Attributes:
@@ -28,35 +29,28 @@ class ObjectDetector(object):
                    to establish a region of focus.
     '''
     
-    def __init__(self):
+    def __init__(self, bg_path, fg_path, method="simple", rectangle=None, 
+                 color_range=None):
         '''
-        Initiates ObjectDetector with all attributes to None.
-        '''
+        Initiates SegmentedObject with user-specified background and foreground
+        image paths.
         
-        self.bg_img = None
-        self.fg_img = None
-        self.fg_mask = None
-        self.color_mask = None
-        self.rect_mask = None
-        return
-        
-    def set_image(self, bg_path, fg_path):
-        '''
-        Sets a new background and foreground image for object detection. The
-        images should have the same pixel dimensions.
-        
-        Any previous foreground masks are reset by this method.
-        
-        Returns:
-            True if both files exist and are read successfully; false otherwise.
+        Args:
+            bg_path: file path to background image.
+            fg_path: file path to foreground image.
+            method: (optional) algorithm to use to create the foreground mask. 
+            rectangle: (optional) 4-tuple representing the foreground rectangle
+                       mask to use.
+            color_range: (optional) 2-tuple representing the color range for
+                         the foreground color mask.
         '''
 
         self.bg_img = cv2.imread(bg_path)
         if self.bg_img is None:
-            return False
+            raise IOError("Background image not loaded successfully.")
         self.fg_img = cv2.imread(fg_path)
         if self.fg_img is None:
-            return False
+            raise IOError("Foreground image not loaded successfully.")
       
         # Blurring images smooths out noise 
         self.bg_img = cv2.bilateralFilter(self.bg_img, 5, 100, 100)
@@ -64,14 +58,18 @@ class ObjectDetector(object):
         #self.bg_img = cv2.medianBlur(self.bg_img, 9)
         #self.fg_img = cv2.medianBlur(self.fg_img, 9)
         
-        # Resets masks
-        height, width, __ = self.fg_img.shape
-        self.color_mask = cv2.bitwise_not(np.zeros([height, width], np.uint8))
-        self.rect_mask = cv2.bitwise_not(np.zeros([height, width], np.uint8))
-        self.set_fg_mask()
-        return True
+        # Initalizes masks
+        white_mask = cv2.bitwise_not(np.zeros(self.fg_img.shape[:-1], np.uint8))
+        self.rect_mask = white_mask
+        if not rectangle is None:
+            self.set_rectangle(*rectangle)
+        self.color_mask = white_mask
+        if not color_range is None:
+            self.set_ignore_color(*color_range)
+        self.set_fg_mask_method(method)
+        return
         
-    def set_fg_mask(self, method="simple"):
+    def set_fg_mask_method(self, method):
         '''
         Sets the foreground image mask to the result of a user-specified
         foreground segmentation method. 
@@ -132,7 +130,6 @@ class ObjectDetector(object):
         self.rect_mask = np.zeros(self.fg_img.shape[:-1], np.uint8)
         cv2.rectangle(self.rect_mask, (x,y), (x+width,y+height), 
                       (255, 255, 255), cv2.cv.CV_FILLED)
-        print self.rect_mask
         return True
     
 
@@ -160,14 +157,28 @@ class ObjectDetector(object):
         fg_img_hsv = cv2.cvtColor(self.fg_img, cv2.COLOR_BGR2HSV)
         self.color_mask = cv2.bitwise_not(cv2.inRange(fg_img_hsv, color_min, color_max))
         return True
+    
+    def get_object_mask(self):
+        '''
+        Computes an image mask, where white represents the foreground object
+        and black represents background.
+        
+        Returns:
+            A matrix representing a 8-bit image mask, with white pixels denoting
+            the object, and black pixels representing background.
+        '''
+        
+        contours = self._get_contours()
+        areas = [cv2.contourArea(c) for c in contours]
+        object_mask = np.zeros(self.fg_mask.shape, np.uint8)
+        if not areas:
+            return object_mask
+        cv2.drawContours(object_mask, contours, np.argmax(areas), (255,255,255))
+        return object_mask
         
     def get_object_rectangle(self):
         '''
-        Returns the upright bounding rectangle of the foreground object.
-        
-        The object is assumed to be the largest contiguous foreground area
-        according to the foreground image mask, after discounting areas marked
-        as background by the ignore mask and rectangle mask.
+        Computes the upright bounding rectangle of the foreground object.
         
         Returns:
             A rectangle represented by the tuple (x,y,w,h), where (x,y) are the
@@ -176,8 +187,28 @@ class ObjectDetector(object):
             be identified, then (0,0,0,0) is returned.
         '''
         
-        if self.fg_mask is None:
+        contours = self._get_contours()
+        areas = [cv2.contourArea(c) for c in contours]
+        if not areas:
             return (0, 0, 0, 0)
+        return cv2.boundingRect(contours[np.argmax(areas)])
+    
+    def _get_contours(self):
+        '''
+        Helper method for extracting contours and contour areas of possible
+        objects in the foreground image. Not to be used by user.
+        
+        The object is assumed to be the largest contiguous foreground area
+        according to the foreground image mask, after discounting areas marked
+        as background by the ignore mask and rectangle mask.
+        
+        Returns:
+            List of lists of points representing detected contours in 
+            foreground mask.
+        '''
+        
+        if self.fg_mask is None:
+            return None
         fg_mask = self.fg_mask.copy()
         if not self.color_mask is None:
             fg_mask = cv2.bitwise_and(fg_mask, self.color_mask)
@@ -185,30 +216,46 @@ class ObjectDetector(object):
             fg_mask = cv2.bitwise_and(fg_mask, self.rect_mask)
         contours, __ = cv2.findContours(fg_mask, cv2.RETR_TREE,
                                         cv2.CHAIN_APPROX_SIMPLE)
-        areas = [cv2.contourArea(c) for c in contours]
-        if not areas:
-            return (0, 0, 0, 0)
-        return cv2.boundingRect(contours[np.argmax(areas)])
-    
-    def convert_color_space(self, color, cv2_conversion_type):
-        '''
-        Converts a color from one color space to another. 
-        
-        Args:
-            color: list of length 3 representing the color to be converted.
-            cv2_conversion_type: cv2 constant representing the color space
-                                 conversion, e.g. cv2.COLOR_RGB2HSV for
-                                 converting from RGB to HSV space.
-        Returns:
-            List of length 3 representing the color in the new color space.
-        '''
-        
-        color = np.asarray(color)
-        temp = np.uint8([[color]]) # 1x1 pixel "image"
-        temp = cv2.cvtColor(temp, cv2_conversion_type)
-        return temp[0][0]
+        return contours 
 
-# Test script for ObjectDetector
+def check_fit(w1, h1, w2, h2):
+    '''
+    Checks if a rectangle 'fits' inside another rectangle.
+    
+    Args:
+        w1: width of the rectangle of interest.
+        h1: height of the rectangle of interest.
+        w2: width of the rectangle to compare to.
+        h1: height of the rectangle to compare to.
+    Returns:
+        True if rect1's dimensions fit within rect2's dimensions; 
+        false otherwise.
+    '''  
+    
+    w1, h1 = (w1, h1) if w1 >= h1 else (h1, w1) # need width >= height
+    w2, h2 = (w2, h2) if w2 >= h2 else (h2, w2)
+    return ((w1 <= w2 and h1 <= h2) or 
+            (w1 > w2 and h2 >= float(2*w1*h1*w2 + (w1*w1 - h1*h1)*sqrt(w1*w1 + h1*h1 - w2*w2)) / (w1*w1 + h1*h1)))
+    
+def convert_color_space(color, cv2_conversion_type):
+    '''
+    Converts a color from one color space to another. 
+    
+    Args:
+        color: list of length 3 representing the color to be converted.
+        cv2_conversion_type: cv2 constant representing the color space
+                             conversion, e.g. cv2.COLOR_RGB2HSV for
+                             converting from RGB to HSV space.
+    Returns:
+        List of length 3 representing the color in the new color space.
+    '''
+    
+    color = np.asarray(color)
+    temp = np.uint8([[color]]) # 1x1 pixel "image"
+    temp = cv2.cvtColor(temp, cv2_conversion_type)
+    return temp[0][0]
+
+# Test script for SegmentedObject
 def main():
     tests = [("example1/", "square.jpg", "arm.jpg"),
              ("example2/", "bg.jpg", "fg1.jpg"),
@@ -218,20 +265,19 @@ def main():
              ("example3/", "bg.jpg", "fg-penny12.jpg"),
              ("example4/", "bg.jpg", "fg1.jpg"),
              ("example4/", "bg.jpg", "fg2.jpg", True),]
-    obj = ObjectDetector()
     for test_param in tests:
         print "Testing:", test_param
         bg_file = test_param[0] + test_param[1]
         fg_file = test_param[0] + test_param[2]
         out_prefix = os.path.splitext(fg_file)[0]
-        obj.set_image(bg_file, fg_file)
+        obj = SegmentedObject(bg_file, fg_file)
         if len(test_param) > 3 and test_param[3]:
             obj.set_ignore_color([0, 0, 0], [180, 255, 96]) # dark colors
             obj.set_rectangle(450, 100, 300, 225) # random region of focus
             ignore_mask = cv2.bitwise_and(obj.color_mask, obj.rect_mask)
             cv2.imwrite(out_prefix + "__ignore.png", ignore_mask)     
         for method in ["simple", "MOG", "MOG2"]:
-            obj.set_fg_mask(method)  
+            obj.set_fg_mask_method(method)  
             x, y, width, height = obj.get_object_rectangle()
             cv2.rectangle(obj.fg_mask, (x,y), (x+width,y+height), (128,128,128))
             cv2.imwrite(out_prefix + "_" + method + ".png", obj.fg_mask) 
