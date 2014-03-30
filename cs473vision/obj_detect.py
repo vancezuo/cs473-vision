@@ -29,8 +29,8 @@ class SegmentedObject(object):
                    to establish a region of focus.
     '''
     
-    def __init__(self, bg_path, fg_path, method="simple", rectangle=None, 
-                 color_range=None):
+    def __init__(self, bg_path, fg_path, method="simple", color_range=None,
+                 rectangle=None):
         '''
         Initiates SegmentedObject with user-specified background and foreground
         image paths.
@@ -155,7 +155,14 @@ class SegmentedObject(object):
         color_min = np.asarray(color_min)
         color_max = np.asarray(color_max) 
         fg_img_hsv = cv2.cvtColor(self.fg_img, cv2.COLOR_BGR2HSV)
-        self.color_mask = cv2.bitwise_not(cv2.inRange(fg_img_hsv, color_min, color_max))
+        #if color_min[0] > color_max[0]: # hue presumedly "wraps" around
+        #    color_min_upper = [180, color_min[1], color_min[2]]
+        #    color_max_lower = [0, color_max[1], color_max[2]]
+        #    mask_low = cv2.inRange(fg_img_hsv, color_max_lower, color_max)
+        #    mask_high = cv2.inRange(fg_img_hsv, color_min, color_min_upper)
+        #    self.color_mask = cv2.bitwise_or(mask_low, mask_high)
+        self.color_mask = cv2.inRange(fg_img_hsv, color_min, color_max)
+        self.color_mask = cv2.bitwise_not(self.color_mask)
         return True
     
     def get_object_mask(self):
@@ -217,8 +224,8 @@ class SegmentedObject(object):
         contours, __ = cv2.findContours(fg_mask, cv2.RETR_TREE,
                                         cv2.CHAIN_APPROX_SIMPLE)
         return contours 
-
-def check_fit(w1, h1, w2, h2):
+    
+def check_fit((w1, h1), (w2, h2)):
     '''
     Checks if a rectangle 'fits' inside another rectangle.
     
