@@ -11,7 +11,7 @@ from math import sqrt
 
 class SegmentedObject(object):
     '''
-    An SegmentedObject attempts to represent an object from an image,
+    A SegmentedObject attempts to represent an object from an image,
     based on a reference background image.
     
     Attributes:
@@ -180,7 +180,8 @@ class SegmentedObject(object):
         object_mask = np.zeros(self.fg_mask.shape, np.uint8)
         if not areas:
             return object_mask
-        cv2.drawContours(object_mask, contours, np.argmax(areas), (255,255,255))
+        cv2.drawContours(object_mask, contours, np.argmax(areas), 
+                         (255,255,255), cv2.cv.CV_FILLED)
         return object_mask
         
     def get_object_rectangle(self):
