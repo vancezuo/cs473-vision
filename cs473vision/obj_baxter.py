@@ -20,10 +20,12 @@ class BaxterObject(object):
         Constructor
         '''
         self.bg_path = bg_path
-        self.set_box_image(box_path)
         self.set_uncompressed_image(obj_path)
         self.set_arm_image(arm_path)
         self.set_compressed_image(compressed_path)
+
+        # TODO use set_box_image() when we incorporate box tests
+        self.box_obj = None
     
     def set_box_image(self, box_path):
         if box_path is None:
@@ -37,7 +39,8 @@ class BaxterObject(object):
         self.uncompress_obj = SegmentedObject(self.bg_path, uncompressed_path)
         return True
         
-    def set_arm_image(self, arm_path, hue_tolerance=180, #TODO fine-tune default values
+    #TODO fine-tune default values
+    def set_arm_image(self, arm_path, hue_tolerance=180,
                       saturation_tolerance=256, value_tolerance=256):
         if arm_path is None:
             return False
@@ -66,7 +69,7 @@ class BaxterObject(object):
         return True
     
     def get_box_size(self):
-        if self.box_obj is None:
+        if self.box_obj is None:    
             return (0, 0)
         return self.box_obj.get_object_rectangle()[-2:]
     
