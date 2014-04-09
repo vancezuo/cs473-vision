@@ -23,12 +23,38 @@ class BaxterObject(object):
         self.bg_path = bg_path
         self.box_obj = None
         self.uncompress_obj = None
+        self.color_low = None
+        self.color_high = None
         self.compress_obj = None
         
         self.set_box_image(box_path)
         self.set_uncompressed_image(obj_path)
         self.set_arm_image(arm_path)
         self.set_compressed_image(compressed_path)
+       
+    def export_box_segment(self, output_path):
+        if self.uncompress_obj is None:
+            return False
+        self.box_obj.export_object_segment(output_path)
+        return True 
+    
+    def export_region_segment(self, output_path):
+        if self.color_low is None or self.color_high is None:
+            return False
+        self.compress_obj.export_region_segment(output_path)
+        return True
+        
+    def export_uncompressed_segment(self, output_path):
+        if self.uncompress_obj is None:
+            return False
+        self.uncompress_obj.export_object_segment(output_path)
+        return True
+    
+    def export_compress_segment(self, output_path):
+        if self.compress_obj is None:
+            return False
+        self.compress_obj.export_object_segment(output_path)
+        return True
     
     def set_box_image(self, box_path):
         if box_path is None:

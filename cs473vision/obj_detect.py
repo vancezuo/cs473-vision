@@ -68,7 +68,85 @@ class SegmentedObject(object):
             self.set_ignore_color(*color_range)
         self.set_fg_mask_method(method)
         return
+    
+    def export_background(self, output_path):
+        '''
+        Writes the background image of the SegmentedObject to a file path
+        specified by the user.
         
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        cv2.imwrite(self.bg_img, output_path)
+        return
+    
+    def export_foreground(self, output_path):
+        '''
+        Writes the foreground image of the SegmentedObject to a file path
+        specified by the user.
+        
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        cv2.imwrite(self.fg_path, output_path)
+        return
+    
+    def export_region_mask(self, output_path):
+        '''
+        Writes the region of interest of the SegmentedObject to a file path
+        specified by the user. The region of interest denotes the area of the
+        image considered as possible foreground (in white).
+        
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        region_mask = cv2.bitwise_and(self.rect_mask, self.color_mask)
+        cv2.imwrite(region_mask, output_path)
+        return
+    
+    def export_region_segment(self, output_path):
+        '''
+        Applies the object mask of the SegmentedObject to its foreground image,
+        and writes the result to a user-specified file path.
+        
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        region_mask = cv2.bitwise_and(self.rect_mask, self.color_mask)
+        segment = cv2.bitwise_and(self.fg_img, self.fg_img, mask=region_mask)
+        cv2.imwrite(segment, output_path)
+        return
+    
+    def export_object_mask(self, output_path):
+        '''
+        Computes the object mask of the SegmentedObject, and writes is to a 
+        file path specified by the user.
+        
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        cv2.imwrite(self.get_object_mask(), output_path)
+        return
+    
+    def export_object_segment(self, output_path):
+        '''
+        Applies the object mask of the SegmentedObject to its foreground image,
+        and writes the result to a user-specified file path.
+        
+        Args:
+            output_path: file path of output image.
+        '''
+        
+        obj_mask = self.get_object_mask()
+        segment = cv2.bitwise_and(self.fg_img, self.fg_img, mask=obj_mask)
+        cv2.imwrite(segment, output_path)
+        return
+            
     def set_fg_mask_method(self, method):
         '''
         Sets the foreground image mask to the result of a user-specified
