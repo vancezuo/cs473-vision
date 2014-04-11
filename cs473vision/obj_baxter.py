@@ -59,14 +59,14 @@ class BaxterObject(object):
 
         self.bg_path = bg_path
         self.box_obj = None
-        self.box_size = None # overrides box_obj for dimensions if not None
         self.uncompress_obj = None
         self.arm_obj = None
-        self.color_tol = None
-        self.color_low = None
-        self.color_high = None
         self.compress_obj = None
-        self.roi = None
+        
+        self._box_size = None # overrides box_obj for dimensions if not None
+        self._color_tol = None
+        self._color_low = None
+        self._color_high = None
         
         self.set_box_image(box_path)
         self.set_uncompressed_image(obj_path)
@@ -111,7 +111,7 @@ class BaxterObject(object):
             output_path: file path of output image.
         '''
         
-        if self.color_low is None or self.color_high is None:
+        if self._color_low is None or self._color_high is None:
             return False
         self.compress_obj.export_region_segment(output_path)
         return True
@@ -159,7 +159,7 @@ class BaxterObject(object):
             True.
         '''
         
-        self.box_size = (width, height)
+        self._box_size = (width, height)
         return True
     
     def set_box_image(self, box_path):
@@ -178,9 +178,7 @@ class BaxterObject(object):
         if box_path is None:
             return False
         self.box_obj = SegmentedObject(self.bg_path, box_path)
-        if not self.roi is None:
-            self.box_obj.set_rectangle(*self.roi) 
-        self.box_size = None
+        self._box_size = None
         return True
     
     def set_box_roi(self, x, y, w, h, xy_type="absolute", dim_type="absolute"):
@@ -227,8 +225,8 @@ class BaxterObject(object):
         saturation = 0 to 256, and value = 0 to 256.
         
         Args:
-            color_low: 3-tuple denoting the lower bound HSV values of the arm.
-            color_high: 3-tuple denoting the upper bound HSV values of the arm.
+            _color_low: 3-tuple denoting the lower bound HSV values of the arm.
+            _color_high: 3-tuple denoting the upper bound HSV values of the arm.
         Returns:
             True if valid HSV values given and set; false otherwise.
         '''
@@ -241,8 +239,8 @@ class BaxterObject(object):
             return False
         if not (0 <= color_low[2]  <= 256) or not (0 <= color_high[2] <= 256):
             return False
-        self.color_low = color_low
-        self.color_high = color_high
+        self._color_low = color_low
+        self._color_high = color_high
         return True
     
     #TODO fine-tune default values    
@@ -279,7 +277,7 @@ class BaxterObject(object):
         if not (0 <= value_tolerance <= 256):
             return False
         self.arm_obj = SegmentedObject(self.bg_path, arm_path)      
-        self.color_tol = [hue_tolerance, saturation_tolerance, value_tolerance]
+        self._color_tol = [hue_tolerance, saturation_tolerance, value_tolerance]
         self._update_arm_color()
         return True
     
@@ -334,8 +332,6 @@ class BaxterObject(object):
         if uncompressed_path is None:
             return False
         self.uncompress_obj = SegmentedObject(self.bg_path, uncompressed_path)
-        if not self.roi is None:
-            self.uncompress_obj.set_rectangle(*self.roi) 
         return True
     
     def set_uncompressed_roi(self, x, y, w, h, xy_type="absolute", 
@@ -391,8 +387,8 @@ class BaxterObject(object):
         if compressed_path is None:
             return False
         self.compress_obj = SegmentedObject(self.bg_path, compressed_path)
-        if not self.color_low is None and not self.color_high is None:
-            self.compress_obj.set_ignore_color(self.color_low, self.color_high)
+        if not self._color_low is None and not self._color_high is None:
+            self.compress_obj.set_ignore_color(self._color_low, self._color_high)
         return True
     
     def set_compressed_roi(self, x, y, w, h, xy_type="absolute", 
@@ -439,8 +435,8 @@ class BaxterObject(object):
             A pair (width, height) denoting the box's dimensions.
         '''
         
-        if not self.box_size is None:
-            return self.box_size
+        if not self._box_size is None:
+            return self._box_size
         if self.box_obj is None:
             return (0, 0)
         return self.box_obj.get_object_rectangle()[-2:]
@@ -498,20 +494,20 @@ class BaxterObject(object):
     def _update_arm_color(self):
         arm_area = self.arm_obj.get_object_mask()
         arm_hsv = cv2.cvtColor(self.arm_obj.fg_img, cv2.COLOR_BGR2HSV)
-        tolerances = self.color_tol
+        tolerances = self._color_tol
         channels = [[0], [1], [2]]
         bins = [180, 256, 256]
         ranges = [[0,179], [0,255], [0,255]]
-        self.color_low = []
-        self.color_high = []
+        self._color_low = []
+        self._color_high = []
         for i in range(3):
             hist = cv2.calcHist([arm_hsv], channels[i], arm_area, [bins[i]], ranges[i])
             densities = []
             for j in range(bins[i] - tolerances[i] + 1):
                 densities.append(sum(hist[j : j+tolerances[i]]))
             min_value = np.argmax(densities)
-            self.color_low.append(min_value)
-            self.color_high.append(min_value + tolerances[i])
+            self._color_low.append(min_value)
+            self._color_high.append(min_value + tolerances[i])
             # Debug
             #np.set_printoptions(suppress=True)
             #print hist
@@ -541,9 +537,9 @@ def main():
 #     obj = BaxterObject(bg_file)
 #     obj.set_arm_image(fg_file)
 #     cv2.imwrite(out_prefix+"_mask.png", obj.arm_obj.get_object_mask())
-#     obj.arm_obj.set_ignore_color(obj.color_low, obj.color_high)
+#     obj.arm_obj.set_ignore_color(obj._color_low, obj._color_high)
 #     cv2.imwrite(out_prefix+"_color.png", obj.arm_obj.color_mask)
-#     print "Color range:", obj.color_low, obj.color_high  
+#     print "Color range:", obj._color_low, obj._color_high  
 
     example6 = [("example6/w-cloth-arm/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
                 ("example6/wo-cloth-arm/", "bg.png", "obj.png", False, "arm.png", "obj-arm.png"),]
@@ -563,7 +559,7 @@ def main():
         obj.set_compressed_image(both_file)
         obj.set_compressed_roi(0, 0, 50, 50, dim_type="relative")
         
-        print "Color range:", obj.color_low, obj.color_high  
+        print "Color range:", obj._color_low, obj._color_high  
         print "Box size:", obj.get_box_size()
         print "Object size:", obj.get_uncompressed_size()
         print "Compressed size:", obj.get_compressed_size()
