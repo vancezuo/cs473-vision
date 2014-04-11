@@ -78,7 +78,7 @@ class SegmentedObject(object):
             output_path: file path of output image.
         '''
         
-        cv2.imwrite(self.bg_img, output_path)
+        cv2.imwrite(output_path, self.bg_img)
         return
     
     def export_foreground(self, output_path):
@@ -90,7 +90,7 @@ class SegmentedObject(object):
             output_path: file path of output image.
         '''
         
-        cv2.imwrite(self.fg_path, output_path)
+        cv2.imwrite(output_path, self.fg_path)
         return
     
     def export_region_mask(self, output_path):
@@ -104,7 +104,7 @@ class SegmentedObject(object):
         '''
         
         region_mask = cv2.bitwise_and(self.rect_mask, self.color_mask)
-        cv2.imwrite(region_mask, output_path)
+        cv2.imwrite(output_path, region_mask)
         return
     
     def export_region_segment(self, output_path):
@@ -118,7 +118,7 @@ class SegmentedObject(object):
         
         region_mask = cv2.bitwise_and(self.rect_mask, self.color_mask)
         segment = cv2.bitwise_and(self.fg_img, self.fg_img, mask=region_mask)
-        cv2.imwrite(segment, output_path)
+        cv2.imwrite(output_path, segment)
         return
     
     def export_object_mask(self, output_path):
@@ -130,7 +130,7 @@ class SegmentedObject(object):
             output_path: file path of output image.
         '''
         
-        cv2.imwrite(self.get_object_mask(), output_path)
+        cv2.imwrite(output_path, self.get_object_mask())
         return
     
     def export_object_segment(self, output_path):
@@ -144,7 +144,7 @@ class SegmentedObject(object):
         
         obj_mask = self.get_object_mask()
         segment = cv2.bitwise_and(self.fg_img, self.fg_img, mask=obj_mask)
-        cv2.imwrite(segment, output_path)
+        cv2.imwrite(output_path, segment)
         return
             
     def set_fg_mask_method(self, method):
@@ -278,6 +278,23 @@ class SegmentedObject(object):
         if not areas:
             return (0, 0, 0, 0)
         return cv2.boundingRect(contours[np.argmax(areas)])
+    
+    def get_object_min_rectangle(self):
+        '''
+        Computes the minimum area rectangle of the foreground object.
+        
+        Returns:
+            A rotated rectangle represented by the tuple (x,y,w,h,t), where
+            (x,y) are the coordinates of the top-left corner, (w,h) are the 
+            pixel width and and height of the rectangle, respectively, and
+            t is the angle of rotation.
+        '''
+        
+        contours = self._get_contours()
+        areas = [cv2.contourArea(c) for c in contours]
+        if not areas:
+            return (0, 0, 0, 0)
+        return cv2.minAreaRect(contours[np.argmax(areas)])
     
     def _get_contours(self):
         '''
