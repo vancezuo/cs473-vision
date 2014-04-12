@@ -37,8 +37,8 @@ class BaxterObject(object):
         box_obj: SegmentedObject of the reference box.
         uncompress_obj: SegmentedObject of target object, uncompressed.
         arm_obj: SegmentedObject of the robot manipulating arm.
-        compress_obj: SegmentedObject of target object, compressed (with the
-                      arm presumedly in the picture.
+        compress_obj: list of SegmentedObject of target object, compressed 
+                      (with the arm presumedly in the picture.
     '''
 
     def __init__(self, bg_path, box_path=None, obj_path=None, arm_path=None, 
@@ -61,7 +61,7 @@ class BaxterObject(object):
         self.box_obj = None
         self.uncompress_obj = None
         self.arm_obj = None
-        self.compress_obj = None
+        self.compress_obj = []
         
         self._box_size = None # overrides box_obj for dimensions if not None
         self._color_tol = None
@@ -113,7 +113,7 @@ class BaxterObject(object):
         
         if self._color_low is None or self._color_high is None:
             return False
-        self.compress_obj.export_region_segment(output_path)
+        self.compress_obj[0].export_region_segment(output_path)
         return True
         
     def export_uncompressed_segment(self, output_path):
@@ -131,7 +131,7 @@ class BaxterObject(object):
         self.uncompress_obj.export_object_segment(output_path)
         return True
     
-    def export_compress_segment(self, output_path):
+    def export_compress_segment(self, output_path, all=False):
         '''
         Writes a cut-out of the ompressed target object, as segmented by the 
         BaxterObject, to an image file. Areas not part of the segmented object 
@@ -141,9 +141,18 @@ class BaxterObject(object):
             output_path: file path of output image.
         '''
         
-        if self.compress_obj is None:
+        if not self.compress_obj:
             return False
-        self.compress_obj.export_object_segment(output_path)
+        if not all:
+            all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
+            self.compress_obj[argmin(alldim)].export_object_segment(output_path)
+            return True
+        for i in range(1, len(self.compress_obj)):
+            cur_rect = self.compress_obj[i][-2:]
+            min_rect = self.compress_obj[i]
+            path_split = os.path.splitext(output_path)
+            path = path_split[0] + "-" + str(i) + path_split[1]
+            obj.export_object_segment(output_path)
         return True
     
     def set_box_dimensions(self, width, height):
@@ -370,7 +379,7 @@ class BaxterObject(object):
         self.uncompress_obj.set_rect(*rect)
         return True
             
-    def set_compressed_image(self, compressed_path):
+    def set_compressed_image(self, compressed_path, add=True):
         '''
         Loads an image as the target object in compressed form. The compressing
         robot arm is assumed to also be in the image, so areas with the same
@@ -379,6 +388,9 @@ class BaxterObject(object):
         
         Args:
             compressed_path: file path to arm object image. 
+            add: boolean denoting whether to add the compressed image to the
+                 list of images, or to create a new list starting with the
+                 current image.
         Returns:
             True if image was loaded and segmented successfully;
             false otherwise.
@@ -386,9 +398,13 @@ class BaxterObject(object):
         
         if compressed_path is None:
             return False
-        self.compress_obj = SegmentedObject(self.bg_path, compressed_path)
+        new_obj = SegmentedObject(self.bg_path, compressed_path)
         if not self._color_low is None and not self._color_high is None:
-            self.compress_obj.set_ignore_color(self._color_low, self._color_high)
+            new_obj.set_ignore_color(self._color_low, self._color_high)
+        if add:
+            self.compress_obj.append(new_obj)
+        else:
+            self.compress_obj = [new_obj]
         return True
     
     def set_compressed_roi(self, x, y, w, h, xy_type="absolute", 
@@ -421,10 +437,11 @@ class BaxterObject(object):
             false otherwise.
         '''
         
-        if self.compress_obj is None:
+        if not self.compress_obj:
             return False
-        rect = self._get_roi(self.compress_obj, x, y, w, h, xy_type, dim_type)
-        self.compress_obj.set_rectangle(*rect)
+        rect = self._get_roi(self.compress_obj[0], x, y, w, h, xy_type, dim_type)
+        for obj in self.compress_obj:
+            obj.set_rectangle(*rect)
         return True    
     
     def get_box_size(self):
@@ -454,18 +471,25 @@ class BaxterObject(object):
             return (0, 0)
         return self.uncompress_obj.get_object_rectangle()[-2:]
     
-    def get_compressed_size(self):
+    def get_compressed_size(self, all=False):
         '''
         Returns the width and height dimensions of the compressed target
         object.
         
+        Args:
+            all: whether or not to 
         Returns:
-            A pair (width, height) denoting the object's dimensions.
+            A list of pairs (width, height) denoting the object's dimensions
+            at different compression instances if all is True; else just
+            the pair with minimum area.
         '''
         
-        if self.compress_obj is None:
+        if not self.compress_obj:
             return (0, 0)
-        return self.compress_obj.get_object_rectangle()[-2:]
+        all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
+        if not all:
+            return all_dim
+        return min(all_dim, key=(lambda x: x[0]*x[1]))
     
     def check_uncompressed_fit(self):
         '''
