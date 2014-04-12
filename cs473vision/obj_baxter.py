@@ -376,7 +376,7 @@ class BaxterObject(object):
         if self.uncompress_obj is None:
             return False
         rect = self._get_roi(self.uncompress_obj, x, y, w, h, xy_type, dim_type)
-        self.uncompress_obj.set_rect(*rect)
+        self.uncompress_obj.set_rectangle(*rect)
         return True
             
     def set_compressed_image(self, compressed_path, add=True):
@@ -565,9 +565,13 @@ def main():
 #     cv2.imwrite(out_prefix+"_color.png", obj.arm_obj.color_mask)
 #     print "Color range:", obj._color_low, obj._color_high  
 
-    example6 = [("example6/w-cloth-arm/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
-                ("example6/wo-cloth-arm/", "bg.png", "obj.png", False, "arm.png", "obj-arm.png"),]
-    for test_param in example6:
+    examples = [("example6/w-cloth-arm/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
+                ("example6/wo-cloth-arm/", "bg.png", "obj.png", False, "arm.png", "obj-arm.png"),
+                ("example7/yellow-phone/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
+                ("example7/blue-sq/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
+                ("example7/brown-box/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png")
+                ]
+    for test_param in examples:
         print "Testing:", test_param
         
         bg_file = test_param[0] + test_param[1]
@@ -578,6 +582,7 @@ def main():
         
         obj = BaxterObject(bg_file)
         obj.set_uncompressed_image(obj_file)
+        obj.set_uncompressed_roi(0, 0, 50, 50, dim_type="relative")
         obj.set_box_image(box_file)
         obj.set_arm_image(arm_file)
         obj.set_compressed_image(both_file)
