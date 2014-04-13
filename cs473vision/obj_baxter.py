@@ -4,6 +4,7 @@ Created on Mar 29, 2014
 @author: Vance Zuo
 '''
 
+import csv
 import cv2
 import numpy as np
 import os
@@ -145,7 +146,7 @@ class BaxterObject(object):
             return False
         if not all:
             all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
-            self.compress_obj[argmin(alldim)].export_object_segment(output_path)
+            self.compress_obj[np.argmin(all_dim)].export_object_segment(output_path)
             return True
         for i in range(1, len(self.compress_obj)):
             cur_rect = self.compress_obj[i][-2:]
@@ -154,6 +155,20 @@ class BaxterObject(object):
             path = path_split[0] + "-" + str(i) + path_split[1]
             obj.export_object_segment(output_path)
         return True
+    
+    def export_sizes(self, output_path):
+        with open(output_path, 'wb') as f:
+            writer = csv.writer(f)
+            writer.writerow(["Object", "Width", "Height"])
+            w, h = self.get_box_size()
+            writer.writerow(["reference", w, h])
+            w, h = self.get_uncompressed_size()
+            writer.writerow(["uncompressed", w, h])
+            count = 0
+            for (w, h) in self.get_compressed_size(all=True):
+                writer.writerow(["compressed-"+str(count), w, h])
+                count = count + 1
+        return True    
     
     def set_box_dimensions(self, width, height):
         '''
@@ -477,7 +492,8 @@ class BaxterObject(object):
         object.
         
         Args:
-            all: whether or not to 
+            all: whether or not to return all dimension from the list of
+                 compressed object images.
         Returns:
             A list of pairs (width, height) denoting the object's dimensions
             at different compression instances if all is True; else just
@@ -485,9 +501,9 @@ class BaxterObject(object):
         '''
         
         if not self.compress_obj:
-            return (0, 0)
+            return [(0, 0)]
         all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
-        if not all:
+        if all:
             return all_dim
         return min(all_dim, key=(lambda x: x[0]*x[1]))
     
@@ -565,8 +581,8 @@ def main():
 #     cv2.imwrite(out_prefix+"_color.png", obj.arm_obj.color_mask)
 #     print "Color range:", obj._color_low, obj._color_high  
 
-    examples = [("example6/w-cloth-arm/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
-                ("example6/wo-cloth-arm/", "bg.png", "obj.png", False, "arm.png", "obj-arm.png"),
+    examples = [#("example6/w-cloth-arm/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
+                #("example6/wo-cloth-arm/", "bg.png", "obj.png", False, "arm.png", "obj-arm.png"),
                 ("example7/yellow-phone/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
                 ("example7/blue-sq/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png"),
                 ("example7/brown-box/", "bg.png", "obj.png", False, "arm-cloth.png", "obj-arm-cloth.png")
@@ -605,7 +621,7 @@ def main():
             out_prefix = os.path.splitext(both_file)[0]
             obj.export_compress_roi_segment(out_prefix+"_roi.png")
             obj.export_compress_segment(out_prefix+"_segment.png")
-        
+        obj.export_sizes(out_prefix+"sizes.txt")
         print     
     return
     
