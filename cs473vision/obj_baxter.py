@@ -63,6 +63,7 @@ class BaxterObject(object):
         self.uncompress_obj = None
         self.arm_obj = None
         self.compress_obj = []
+        #self.compress_force = []
         
         self._box_size = None # overrides box_obj for dimensions if not None
         self._color_tol = None
@@ -132,7 +133,7 @@ class BaxterObject(object):
         self.uncompress_obj.export_object_segment(output_path)
         return True
     
-    def export_compress_segment(self, output_path, all=False):
+    def export_compress_segment(self, output_path, min_area=True, all=False):
         '''
         Writes a cut-out of the ompressed target object, as segmented by the 
         BaxterObject, to an image file. Areas not part of the segmented object 
@@ -145,7 +146,7 @@ class BaxterObject(object):
         if not self.compress_obj:
             return False
         if not all:
-            all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
+            all_dim = [x.get_object_rectangle(min_area)[2:4] for x in self.compress_obj]
             self.compress_obj[np.argmin(all_dim)].export_object_segment(output_path)
             return True
         for i in range(1, len(self.compress_obj)):
@@ -159,7 +160,7 @@ class BaxterObject(object):
     def export_sizes(self, output_path):
         with open(output_path, 'wb') as f:
             writer = csv.writer(f)
-            writer.writerow(["Object", "Width", "Height"])
+            writer.writerow(["Object", "Width (px)", "Height (px)"])
             w, h = self.get_box_size()
             writer.writerow(["reference", w, h])
             w, h = self.get_uncompressed_size()
@@ -459,10 +460,14 @@ class BaxterObject(object):
             obj.set_rectangle(*rect)
         return True    
     
-    def get_box_size(self):
+    def get_box_size(self, min_area=True):
         '''
         Returns the width and height dimensions of the reference box object.
-        
+         
+        Args:
+            min_area: whether to calculate the object's dimension based
+                      on the minimum area bounding rectangle, instead of 
+                      an upright bounding rectangle.       
         Returns:
             A pair (width, height) denoting the box's dimensions.
         '''
@@ -471,27 +476,34 @@ class BaxterObject(object):
             return self._box_size
         if self.box_obj is None:
             return (0, 0)
-        return self.box_obj.get_object_rectangle()[-2:]
+        return self.box_obj.get_object_rectangle(min_area)[2:4]
     
-    def get_uncompressed_size(self):
+    def get_uncompressed_size(self, min_area=True):
         '''
         Returns the width and height dimensions of the uncompressed target
         object.
         
+        Args:
+            min_area: whether to calculate the object's dimension based
+                      on the minimum area bounding rectangle, instead of 
+                      an upright bounding rectangle.        
         Returns:
             A pair (width, height) denoting the object's dimensions.
         '''
         
         if self.uncompress_obj is None:
             return (0, 0)
-        return self.uncompress_obj.get_object_rectangle()[-2:]
+        return self.uncompress_obj.get_object_rectangle(min_area)[2:4]
     
-    def get_compressed_size(self, all=False):
+    def get_compressed_size(self, min_area=True, all=False):
         '''
         Returns the width and height dimensions of the compressed target
         object.
         
         Args:
+            min_area: whether to calculate the object's dimension based
+                      on the minimum area bounding rectangle, instead of 
+                      an upright bounding rectangle.
             all: whether or not to return all dimension from the list of
                  compressed object images.
         Returns:
@@ -502,34 +514,42 @@ class BaxterObject(object):
         
         if not self.compress_obj:
             return [(0, 0)]
-        all_dim = [x.get_object_rectangle()[-2:] for x in self.compress_obj]
+        all_dim = [x.get_object_rectangle(min_area)[2:4] for x in self.compress_obj]
         if all:
             return all_dim
         return min(all_dim, key=(lambda x: x[0]*x[1]))
     
-    def check_uncompressed_fit(self):
+    def check_uncompressed_fit(self, min_area=True):
         '''
         Checks if the uncompressed target object 'fits' in the reference 
         box object.
         
+        Args:
+            min_area: whether to base the object dimensions on their
+                      minimum area bounding rectangle, instead of 
+                      their upright bounding rectangle.        
         Returns:
             True if the uncompressed target object's dimensions 'fit' in the
             reference box object's dimensions; false otherwise.
         '''
         
-        return check_fit(self.get_uncompressed_size(), self.get_box_size())
+        return check_fit(self.get_uncompressed_size(min_area), self.get_box_size(min_area))
     
-    def check_compressed_fit(self):
+    def check_compressed_fit(self, min_area=True):
         '''
         Checks if the compressed target object 'fits' in the reference 
         box object.
         
+        Args:
+            min_area: whether to base the object dimensions on their
+                      minimum area bounding rectangle, instead of 
+                      their upright bounding rectangle.            
         Returns:
             True if the compressed target object's dimensions 'fit' in the
             reference box object's dimensions; false otherwise.
         '''
         
-        return check_fit(self.get_compressed_size(), self.get_box_size())
+        return check_fit(self.get_compressed_size(min_area), self.get_box_size(min_area))
 
     def _update_arm_color(self):
         arm_area = self.arm_obj.get_object_mask()
@@ -621,7 +641,7 @@ def main():
             out_prefix = os.path.splitext(both_file)[0]
             obj.export_compress_roi_segment(out_prefix+"_roi.png")
             obj.export_compress_segment(out_prefix+"_segment.png")
-        obj.export_sizes(out_prefix+"sizes.txt")
+        #obj.export_sizes(out_prefix+"sizes.txt")
         print     
     return
     
