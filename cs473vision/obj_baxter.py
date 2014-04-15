@@ -188,9 +188,10 @@ class BaxterObject(object):
             writer.writerow(["Object", "Width (px)", "Height (px)", 
                              "Width (mm)", "Height (mm)", "Force (N)"])
             mm_px = self.get_mm_per_px()
-            writer.writerow(["reference", w, h, w*mm_px, h*mm_px, -1])
+            w, h = self.get_measure_size()
+            writer.writerow(["reference-measure", w, h, w*mm_px, h*mm_px, -1])
             w, h = self.get_box_size()
-            writer.writerow(["box", w, h, w*mm_px, h*mm_px, -1])
+            writer.writerow(["reference-box", w, h, w*mm_px, h*mm_px, -1])
             w, h = self.get_uncompressed_size()
             writer.writerow(["uncompressed", w, h, w*mm_px, h*mm_px, -1])
             compressed_sizes = self.get_compressed_size(all=True)
@@ -521,6 +522,13 @@ class BaxterObject(object):
         width_mm, height_mm = self._measure_mm
         return ((width_mm/width_px) + (height_mm/height_px)) / 2.0  
     
+    def get_measure_size(self, min_area=True):
+        if not self._measure_size is None:
+            return self._measure_size
+        if self.measure_obj is None:
+            return (-1, -1)
+        return self.measure_obj.get_object_rectangle(min_area)[2:4]    
+    
     def get_box_size(self, min_area=True):
         '''
         Returns the width and height dimensions of the reference box object.
@@ -714,7 +722,7 @@ def main():
     bg_file = example8[0] + example8[1]
     ref_file = example8[0] + example8[2]
     width_mm, height_mm = example8[3]
-    box_file = test_param[0] + test_param[4] if example8[4] else None
+    box_file = example8[0] + example8[4] if example8[4] else None
     arm_file = example8[0] + example8[5]
     obj_file = example8[0] + example8[6]
     both_file = example8[0] + example8[7]
@@ -735,6 +743,7 @@ def main():
     
     print "Color range:", obj._color_low, obj._color_high  
     print "Millimeters / Pixel:", obj.get_mm_per_px()
+    print "Measure size:", obj.get_measure_size()
     print "Box size:", obj.get_box_size()
     print "Object size:", obj.get_uncompressed_size()
     print "Compressed size:", obj.get_compressed_size()
