@@ -262,7 +262,7 @@ class SegmentedObject(object):
                          (255,255,255), cv2.cv.CV_FILLED)
         return object_mask
         
-    def get_object_rectangle(self):
+    def get_object_rectangle(self, min_area=False):
         '''
         Computes the upright bounding rectangle of the foreground object.
         
@@ -273,6 +273,8 @@ class SegmentedObject(object):
             be identified, then (0,0,0,0) is returned.
         '''
         
+        if min_area:
+            return self.get_object_min_rectangle()
         contours = self._get_contours()
         areas = [cv2.contourArea(c) for c in contours]
         if not areas:
@@ -293,8 +295,9 @@ class SegmentedObject(object):
         contours = self._get_contours()
         areas = [cv2.contourArea(c) for c in contours]
         if not areas:
-            return (0, 0, 0, 0)
-        return cv2.minAreaRect(contours[np.argmax(areas)])
+            return (0, 0, 0, 0, 0)
+        (x, y), (w, h), t = cv2.minAreaRect(contours[np.argmax(areas)])
+        return (x, y, w, h, t)
     
     def _get_contours(self):
         '''
