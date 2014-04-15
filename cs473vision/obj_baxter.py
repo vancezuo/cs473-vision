@@ -186,19 +186,24 @@ class BaxterObject(object):
         with open(output_path, 'wb') as f:
             writer = csv.writer(f)
             writer.writerow(["Object", "Width (px)", "Height (px)", 
-                             "Width (mm)", "Height (mm)", "Force (N)"])
+                             "Width (mm)", "Height (mm)", "Force (N)",
+                             "Spring Constant (N/mm)"])
+            
             mm_px = self.get_mm_per_px()
+            
             w, h = self.get_measure_size()
-            writer.writerow(["reference-measure", w, h, w*mm_px, h*mm_px, -1])
+            writer.writerow(["reference-measure", w, h, w*mm_px, h*mm_px, -1, -1])
             w, h = self.get_box_size()
-            writer.writerow(["reference-box", w, h, w*mm_px, h*mm_px, -1])
+            writer.writerow(["reference-box", w, h, w*mm_px, h*mm_px, -1, -1])
+            
             w, h = self.get_uncompressed_size()
-            writer.writerow(["uncompressed", w, h, w*mm_px, h*mm_px, -1])
+            writer.writerow(["uncompressed", w, h, w*mm_px, h*mm_px, -1, -1])
             compressed_sizes = self.get_compressed_size(all=True)
             for i in range(len(self.compress_obj)):
-                w, h = compressed_sizes[i]
+                w_c, h_c = compressed_sizes[i]
                 f = self.compress_force[i]
-                writer.writerow(["compressed-"+str(i), w, h, w*mm_px, h*mm_px, f])
+                h_chg = h - h_c
+                writer.writerow(["compressed-"+str(i), w_c, h_c, w*mm_px, h*mm_px, f, f / h_chg])
         return True  
     
     def set_measure_dimensions(self, mm_per_px):
