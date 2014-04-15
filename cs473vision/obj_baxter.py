@@ -169,14 +169,12 @@ class BaxterObject(object):
         if not self.compress_obj:
             return False
         if not all:
-            all_dim = [x.get_object_rectangle(min_area)[2:4] for x in self.compress_obj]
+            all_dim = [x.get_object_rectangle_size(min_area) for x in self.compress_obj]
             all_area = [y[0]*y[1] for y in all_dim]
             min_obj = self.compress_obj[np.argmin(all_area)]
             min_obj.export_object_segment(output_path)
             return True
         for i in range(1, len(self.compress_obj)):
-            cur_rect = self.compress_obj[i][-2:]
-            min_rect = self.compress_obj[i]
             path_split = os.path.splitext(output_path)
             path = path_split[0] + "-" + str(i) + path_split[1]
             obj.export_object_segment(output_path)
@@ -527,7 +525,7 @@ class BaxterObject(object):
             return self._box_size
         if self.measure_obj is None:
             return -1
-        width_px, height_px = self.measure_obj.get_object_min_rectangle()[2:4]
+        width_px, height_px = self.measure_obj.get_object_rectangle_size(min_area=True)
         width_mm, height_mm = self._measure_mm
         return ((width_mm/width_px) + (height_mm/height_px)) / 2.0  
     
@@ -536,7 +534,7 @@ class BaxterObject(object):
             return self._measure_size
         if self.measure_obj is None:
             return (-1, -1)
-        return self.measure_obj.get_object_rectangle(min_area)[2:4]    
+        return self.measure_obj.get_object_rectangle_size(min_area) 
     
     def get_box_size(self, min_area=True):
         '''
@@ -554,7 +552,7 @@ class BaxterObject(object):
             return self._box_size
         if self.box_obj is None:
             return (-1, -1)
-        return self.box_obj.get_object_rectangle(min_area)[2:4]
+        return self.box_obj.get_object_rectangle_size(min_area) 
     
     def get_uncompressed_size(self, min_area=True):
         '''
@@ -571,7 +569,7 @@ class BaxterObject(object):
         
         if self.uncompress_obj is None:
             return (-1, -1)
-        return self.uncompress_obj.get_object_rectangle(min_area)[2:4]
+        return self.uncompress_obj.get_object_rectangle_size(min_area) 
     
     def get_compressed_size(self, min_area=True, all=False):
         '''
@@ -592,7 +590,7 @@ class BaxterObject(object):
         
         if not self.compress_obj:
             return [(-1, -1)]
-        all_dim = [x.get_object_rectangle(min_area)[2:4] for x in self.compress_obj]
+        all_dim = [x.get_object_rectangle_size(min_area) for x in self.compress_obj]
         if all:
             return all_dim
         return min(all_dim, key=(lambda x: x[0]*x[1]))
