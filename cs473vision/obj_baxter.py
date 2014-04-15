@@ -461,6 +461,10 @@ class BaxterObject(object):
         
         if compressed_path is None:
             return False
+        if os.path.isdir(compressed_path):
+            for file in os.listdir(compressed_path):
+                if file.endswith(".png") or file.endswith(".jpg"):
+                    self.set_compressed_image(compressed_path + file)
         new_obj = SegmentedObject(self.bg_path, compressed_path)
         if not self._color_low is None and not self._color_high is None:
             new_obj.set_ignore_color(self._color_low, self._color_high)
