@@ -525,7 +525,7 @@ class BaxterObject(object):
             return self._box_size
         if self.measure_obj is None:
             return -1
-        width_px, height_px = self.measure_obj.get_object_min_rectangle()[2:4]
+        width_px, height_px = self.measure_obj.get_object_rectangle_size(min_area=True)
         width_mm, height_mm = self._measure_mm
         return ((width_mm/width_px) + (height_mm/height_px)) / 2.0  
     

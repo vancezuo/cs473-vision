@@ -7,7 +7,7 @@ Created on Feb 28, 2014
 import numpy as np
 import cv2
 import os
-from math import sqrt
+from math import sqrt, hypot
 
 class SegmentedObject(object):
     '''
@@ -278,10 +278,13 @@ class SegmentedObject(object):
         '''
         
         p1, p2, __, p4 = self.get_object_rectangle_points(min_area)
-        d1 = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-        d2 = math.hypot(p4[0] - p1[0], p4[1] - p1[1])
-        s1 = (p2[1] - p1[1]) / (p2[0] - p1[0]) # slope corresponding to d1    
-        w, h = (d1, d2) if (-1 < s1 < 1) else (d2, d1)
+        d1 = hypot(p2[0] - p1[0], p2[1] - p1[1])
+        d2 = hypot(p4[0] - p1[0], p4[1] - p1[1])
+        if p2[0] - p1[0] != 0: # slope of d1 = infinity
+            s1 = float(p2[1] - p1[1]) / (p2[0] - p1[0])  
+            w, h = (d1, d2) if (-1 < s1 < 1) else (d2, d1)
+        else:
+            w, h = (d2, d1)
         return (w, h)
     
     def get_object_rectangle_points(self, min_area=False):
