@@ -738,8 +738,8 @@ def main():
     w_roi, h_roi = example8[9]
     
     obj = BaxterObject(bg_file)
-    obj.set_uncompressed_image(obj_file)
-    obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
+#     obj.set_uncompressed_image(obj_file)
+#     obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
     obj.set_measure_image(ref_file, width_mm, height_mm)
     obj.set_measure_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
     obj.set_arm_image(arm_file)
