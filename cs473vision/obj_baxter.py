@@ -82,6 +82,7 @@ class BaxterObject(object):
         self.set_uncompressed_image(obj_path)
         self.set_arm_image(arm_path)
         self.set_compressed_image(compressed_path)
+        return
     
     def export_measure_segment(self, output_path):
         '''
@@ -519,7 +520,7 @@ class BaxterObject(object):
         for obj in self.compress_obj:
             obj.set_rectangle(*rect)
         return True  
-    
+
     def get_mm_per_px(self):
         if not self._measure_size is None:
             return self._box_size
