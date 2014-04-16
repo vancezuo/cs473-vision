@@ -11,9 +11,9 @@ import os
 from obj_detect import SegmentedObject
 from obj_baxter import BaxterObject
 
-class BaxterObjectView(BaxterObject):
+class BaxterExperiment(BaxterObject):
     def __init__(self, bg_file):
-        super(BaxterObjectView, self).__init__(bg_file)
+        super(BaxterExperiment, self).__init__(bg_file)
         self.name = "BaxterObject"
         self.bar = "Image"
         
@@ -38,14 +38,34 @@ class BaxterObjectView(BaxterObject):
             obj.export_sizes(example8[0] + "sizes.txt")
         return
     
+    def import_images(self, path_dir): # Caution: very project specific.
+        if not path_dir.endswith("/"):
+            path_dir += "/"
+        for file in os.listdir(path_dir):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                name = os.path.splitext(file)[0]
+                if name == "background":
+                    self.bg_path = path_dir + file
+                elif name == "reference":
+                    self.set_measure_image(path_dir + file, 100, 100)
+                elif name == "arm":
+                    self.set_arm_image(path_dir + file)
+                elif name == "box":
+                    self.set_box_image(path_dir + file)
+                elif name == "obj":
+                    self.set_uncompressed_image(path_dir + file)
+                elif name.startswith("compression"):
+                    self.set_compressed_image(path_dir + file)
+        return True
+    
     def display_results(self):
         self.total = 5 + len(self.compress_obj)
         
         cv2.destroyWindow(self.name)
         cv2.namedWindow(self.name)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
-                              self.total, self.display_update)
-        self.display_update(self.pos)
+                              self.total, self._display_update)
+        self._display_update(self.pos)
         
         while True:
             k = cv2.waitKey()
@@ -53,8 +73,8 @@ class BaxterObjectView(BaxterObject):
             if k == 27 or k == ord('q'): # ESC
                 break
             if k == 9: # tab
-                self.display_update(0)
-                cv2.waitKey(750)
+                self._display_update(0)
+                cv2.waitKey(500)
             elif k == ord('a'): # left arrow
                 self.pos = (self.pos - 1) % (self.total + 1)
                 cv2.setTrackbarPos(self.bar, self.name, self.pos)
@@ -67,12 +87,12 @@ class BaxterObjectView(BaxterObject):
                 self.rect = (self.rect + 1) % 3
             else:
                 continue
-            self.display_update(self.pos)
+            self._display_update(self.pos)
             
         cv2.destroyAllWindows()
         return
                  
-    def display_update(self, index):
+    def _display_update(self, index):
         bg_img = cv2.imread(self.bg_path)
         if index == 0:
             cv2.imshow(self.name, bg_img)
