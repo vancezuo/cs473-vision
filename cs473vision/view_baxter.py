@@ -18,12 +18,29 @@ class BaxterObjectView(BaxterObject):
         self.bar = "Image"
         
         self.pos = 0
-        self.total = 5 + len(self.compress_obj)
+        self.total = 1
         self.seg = 0 # 0 = none, 1 = region, 2 = object
         self.rect = 0 # 0 = none, 1 = upright, 2 = min area
         return
     
+    def export_results(self, ouput_dir, segment=True, roi=False, table=True):
+        if segment:
+            obj.export_measure_segment(ouput_dir+"measure-seg.png")
+            obj.export_arm_segment(ouput_dir+"arm-seg.png")
+            obj.export_uncompressed_segment(ouput_dir+"obj-seg.png")
+            obj.export_compress_segment(ouput_dir+"objc-seg.png")      
+        if roi:
+            obj.export_measure_roi_segment(ouput_dir+"measure-roi.png")
+            obj.export_arm_roi_segment(ouput_dir+"arm-roi.png")
+            obj.export_uncompressed_roi_segment(ouput_dir+"obj-roi.png")
+            obj.export_compress_roi_segment(ouput_dir+"objc-roi.png")
+        if table:
+            obj.export_sizes(example8[0] + "sizes.txt")
+        return
+    
     def display_results(self):
+        self.total = 5 + len(self.compress_obj)
+        
         cv2.destroyWindow(self.name)
         cv2.namedWindow(self.name)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
@@ -33,7 +50,6 @@ class BaxterObjectView(BaxterObject):
         while True:
             k = cv2.waitKey()
             self.pos = cv2.getTrackbarPos(self.bar, self.name)
-            print self.pos
             if k == 27 or k == ord('q'): # ESC
                 break
             if k == 9: # tab
@@ -97,7 +113,7 @@ class BaxterObjectView(BaxterObject):
 
 def main():
     example8 = ["example8/", "bg.jpg", "ref.jpg", (100,100), False, "arm.jpg", "obj.jpg", "obj-c.jpg", (15,30),(30,40)]
-
+ 
     bg_file = example8[0] + example8[1]
     ref_file = example8[0] + example8[2]
     width_mm, height_mm = example8[3]
@@ -107,7 +123,7 @@ def main():
     both_file = example8[0] + example8[7]
     x_roi, y_roi = example8[8]
     w_roi, h_roi = example8[9]
-    
+     
     obj = BaxterObjectView(bg_file)
     obj.set_measure_image(ref_file, width_mm, height_mm)
     obj.set_measure_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
@@ -118,6 +134,10 @@ def main():
     obj.set_compressed_image(both_file)
     obj.set_compressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
     
+#     base = "example9/foam/"
+#     obj = BaxterObjectView(None)
+#     obj.import_images(base)
+      
     print "Color range:", obj._color_low, obj._color_high  
     print "Millimeters / Pixel:", obj.get_mm_per_px()
     print "Measure size:", obj.get_measure_size()

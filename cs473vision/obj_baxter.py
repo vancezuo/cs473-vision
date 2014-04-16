@@ -205,6 +205,26 @@ class BaxterObject(object):
                 writer.writerow(["compressed-"+str(i), w_c, h_c, w*mm_px, h*mm_px, f, f / h_chg])
         return True  
     
+    def import_images(self, path_dir): # Caution: very project specific.
+        if not path_dir.endswith("/"):
+            path_dir += "/"
+        for file in os.listdir(path_dir):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                name = os.path.splitext(file)[0]
+                if name == "background":
+                    self.bg_path = path_dir + file
+                elif name == "reference":
+                    self.set_measure_image(path_dir + file, 100, 100)
+                elif name == "arm":
+                    self.set_arm_image(path_dir + file)
+                elif name == "box":
+                    self.set_box_image(path_dir + file)
+                elif name == "obj":
+                    self.set_uncompressed_image(path_dir + file)
+                elif name.startswith("compression"):
+                    self.set_compressed_image(path_dir + file)
+        return True
+    
     def set_measure_dimensions(self, mm_per_px):
         self._measure_size = mm_per_px
         return True
