@@ -43,17 +43,23 @@ class BaxterExperiment(BaxterObject):
             obj.export_sizes(example8[0] + "sizes.txt")
         return True
     
-    def import_images(self, path_dir): # Caution: very project specific.
+    def import_images(self, path_dir): # Caution: very project specific
         if not os.path.isdir(path_dir):
             return False
         if not path_dir.endswith("/"):
             path_dir += "/"
-        for file in os.listdir(path_dir):
+        for file in os.listdir(path_dir): # Must find background first
             if file.endswith(".png") or file.endswith(".jpg"):
                 name = os.path.splitext(file)[0]
                 if name == "background" or name == "bg":
                     self.bg_path = path_dir + file
-                elif name == "reference" or name == "ref":
+                    break
+        if not self.bg_path:
+            return False
+        for file in os.listdir(path_dir):
+            if file.endswith(".png") or file.endswith(".jpg"):
+                name = os.path.splitext(file)[0]
+                if name == "reference" or name == "ref":
                     self.set_measure_image(path_dir + file, 100, 100)
                 elif name == "arm":
                     self.set_arm_image(path_dir + file)
@@ -77,9 +83,9 @@ class BaxterExperiment(BaxterObject):
         
         cv2.destroyWindow(self.name)
         cv2.namedWindow(self.name)
+        self._display_update(self.pos)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
                               self.total, self._display_update)
-        self._display_update(self.pos)
         
         while True:
             k = cv2.waitKey()
@@ -185,89 +191,96 @@ def main():
     parser = argparse.ArgumentParser(description="Process Baxter experiment images.")  
     parser.add_argument("-v", "--view", action="store_true", 
                         help="display results in window")
-    parser.add_argument("-e", "--export", nargs=1, type=file, metavar="DIR",
+    parser.add_argument("-e", "--export", nargs=1, metavar="DIR",
                         help="export results to file directory")
-    parser.add_argument("-d", "--dir", nargs=1, type=file, 
+    parser.add_argument("-d", "--dir", nargs=1, 
                         help="load directory path of images to add")
-    parser.add_argument("-b", "--bg", nargs=1, metavar="FILE",
-                        type=file, help="add background image")
-    parser.add_argument("-m", "--measure", nargs=1, type=file, metavar="FILE",
+    parser.add_argument("-b", "--bg", nargs=1, metavar="FILE", 
+                        help="add background image")
+    parser.add_argument("-m", "--measure", nargs=1, metavar="FILE",
                         help="add measure reference image")
     parser.add_argument("-m-d", "--measure-dim", nargs=2, type=int, 
                         metavar=("WIDTH", "HEIGHT"),
                         help="specify measure reference dimensions")
-    parser.add_argument("-x", "--box", nargs=1, type=file, metavar="FILE",
+    parser.add_argument("-x", "--box", nargs=1, metavar="FILE",
                         help="add box reference image")
-    parser.add_argument("-a", "--arm", nargs=1, type=file, metavar="FILE",
+    parser.add_argument("-a", "--arm", nargs=1, metavar="FILE",
                         help="add manipulating arm image")
     parser.add_argument("-a-r", "--arm-color-range", nargs=3, type=int, 
                         metavar=("HUE", "SATURATION", "VALUE"),
                         help="specify arm color tolerance (in HSV space)")
-    parser.add_argument("-o", "--obj", nargs=1, type=file, metavar="FILE",
+    parser.add_argument("-o", "--obj", nargs=1, metavar="FILE",
                          help="add uncompressed object image")
-    parser.add_argument("-c", "--compression", nargs='+', type=file, metavar="FILE",
+    parser.add_argument("-c", "--compression", nargs='+', metavar="FILE",
                         help="add compressed object image(s)")
     args = parser.parse_args()
     
     baxter = BaxterExperiment()
     if args.dir:
-        print "Adding files from", args.dir + "..."
+        print "Adding files from", args.dir[0], "...",
         baxter.import_images(args.dir[0])
+        print "done."
     if args.bg:
-        print "Setting background image to", args.bg, "..."
+        print "Setting background image to", args.bgv, "...",
         baxter.bg_path = args.bg[0]
+        print "done."
     if args.measure:
         f = args.measure[0]
         if args.measure_dim:
             w = args.measure[1]
             h = args.measure[2]
             print ("Setting measurement reference image to " + str(f) 
-                   + "with known" + w + "x" + h + " mm dimensions ...")
+                   + "with known" + w + "x" + h + " mm dimensions ..."),
             baxter.set_measure_image(f, w, h)
         else:
             print ("Setting measurement reference image to " 
-                   + str(f) + "with DEFAULT dimensions ...")
+                   + str(f) + "with DEFAULT dimensions ..."),
             baxter.set_measure_image(f)
+        print "done."
     if args.box:
-        print "Setting box reference image to", args.box, "..."
+        print "Setting box reference image to", args.box[0], "...",
         baxter.set_box_image(args.box[0])
+        print "done."
     if args.arm:
         f = args.arm[0]
         if args.arm_color_range:
             h = args.arm_color_range[0]
             s = args.arm_color_range[1]
             v = args.arm_color_range[2]
-            print ("Setting arm image to " + str(f) + "with color tolerances h="
-                   + str(h) + ", s=" + str(s) + ", v=" + str(v) + " ...")
+            print ("Setting arm image to " + str(f) + "with color ranges h="
+                   + str(h) + ", s=" + str(s) + ", v=" + str(v) + " ..."),
             baxter.set_arm_image(f, h, s, v)
         else:
-            print "Setting arm image to ", f, "with DEFAULT color tolerances..."
+            print "Setting arm image to ", f, "with DEFAULT color ranges...",
             baxter.set_arm_image(f)
+        print "done."
     if args.obj:
-        print "Setting uncompressed object image to", args.obj, "..."
+        print "Setting uncompressed object image to", args.obj[0], "...",
         baxter.set_uncompressed_image(args.obj[0])
+        print "done."
     if args.compression:
-        print "Setting compressed object image(s) to", args.compression, "..."
+        print "Setting compressed object image(s) to", args.compression[0], "...",
         for f in args.compression:
             baxter.set_uncompressed_image(args.compression)
-    
+        print "done."
     if baxter.bg_path:
         print "Baxter experiment successfully loaded. Have some stats:"    
-        print "Color range:", obj._color_low, obj._color_high  
-        print "Millimeters / Pixel:", obj.get_mm_per_px()
-        print "Measure object size (px):", obj.get_measure_size()
-        print "Box object size (px):", obj.get_box_size()
-        print "Object object size (px):", obj.get_uncompressed_size()
-        print "Compressed object size (px):", obj.get_compressed_size()
+        print "Color range:", baxter._color_low, baxter._color_high  
+        print "Millimeters / Pixel:", baxter.get_mm_per_px()
+        print "Measure object size (px):", baxter.get_measure_size()
+        print "Box object size (px):", baxter.get_box_size()
+        print "Object object size (px):", baxter.get_uncompressed_size()
+        print "Compressed object size (px):", baxter.get_compressed_size()
         
     if args.export:
-        print "Exporting results to", args.export, "..."
+        print "Exporting results to", args.export[0], "..."
         if not baxter.export_results(args.export[0]):
             print "Nothing written. Are you sure that's a directory?"
     if args.view:
-        print "Opening results window ..."
+        print "Opening results window ...",
         baxter.display_results()
-        print "Results window closed."
+        print "closed."
+    print "Finished executing. Goodbye."
     return
 
 if __name__ == "__main__":
