@@ -85,7 +85,7 @@ class BaxterExperiment(BaxterObject):
         cv2.namedWindow(self.name)
         self._display_update(self.pos)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
-                              self.total, self._display_update)
+                              self.total-1, self._display_update)
         
         while True:
             k = cv2.waitKey()
@@ -96,10 +96,10 @@ class BaxterExperiment(BaxterObject):
                 self._display_update(0)
                 cv2.waitKey(500)
             elif k == ord('a'): # left arrow
-                self.pos = (self.pos - 1) % (self.total + 1)
+                self.pos = (self.pos - 1) % self.total
                 cv2.setTrackbarPos(self.bar, self.name, self.pos)
             elif k == ord('d'): # right arrow
-                self.pos = (self.pos + 1) % (self.total + 1)
+                self.pos = (self.pos + 1) % self.total
                 cv2.setTrackbarPos(self.bar, self.name, self.pos)
             elif k == ord('s'):
                 self.seg = (self.seg + 1) % 3
@@ -217,7 +217,7 @@ def main():
     
     baxter = BaxterExperiment()
     if args.dir:
-        print "Adding files from", args.dir[0], "...",
+        print "Importing files from", args.dir[0], "...",
         baxter.import_images(args.dir[0])
         print "done."
     if args.bg:
