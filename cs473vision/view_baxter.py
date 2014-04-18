@@ -20,8 +20,8 @@ class BaxterExperiment(BaxterObject):
         
         self.pos = 0
         self.total = 1
-        self.seg = 0 # 0 = none, 1 = region, 2 = object
-        self.rect = 0 # 0 = none, 1 = upright, 2 = min area
+        self.seg = 1 # 0 = none, 1 = region, 2 = object
+        self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
     def export_results(self, output_dir, segment=True, roi=False, table=True):
