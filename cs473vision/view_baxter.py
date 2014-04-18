@@ -116,7 +116,8 @@ class BaxterExperiment(BaxterObject):
     def _display_update(self, index):
         bg_img = cv2.imread(self.bg_path)
         if index == 0:
-            cv2.imshow(self.name, bg_img)
+            # Apply the same blurring filter as in object_detect.py
+            cv2.imshow(self.name, cv2.bilateralFilter(bg_img, 5, 100, 100))
             return
         
         obj = None
