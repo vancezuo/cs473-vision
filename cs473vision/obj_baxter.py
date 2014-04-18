@@ -323,7 +323,7 @@ class BaxterObject(object):
         return True
     
     #TODO fine-tune default values    
-    def set_arm_image(self, arm_path, hue_tolerance=30, 
+    def set_arm_image(self, arm_path, hue_tolerance=60, 
                       saturation_tolerance=128, value_tolerance=128):
         '''
         Loads an image as the arm object, which will be segmented to determine
@@ -644,9 +644,11 @@ class BaxterObject(object):
             for j in range(bins[i]):
                 if j+tolerances[i] <= bins[i]:
                     freq = sum(hist[j : j+tolerances[i]])
-                else:
+                elif i == 0: # allow wrap-around for hue only
                     wrap = j+tolerances[i] - bins[i]
                     freq = sum(hist[j : bins[i]]) + sum(hist[0 : wrap])
+                else:
+                    continue
                 densities.append(freq)
             min_value = np.argmax(densities)
             self._color_low.append(min_value)
