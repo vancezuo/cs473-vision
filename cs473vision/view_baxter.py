@@ -25,10 +25,10 @@ class BaxterExperiment(BaxterObject):
         return
     
     def export_results(self, ouput_dir, segment=True, roi=False, table=True):
-        if not os.path.isdir(path_dir):
+        if not os.path.isdir(ouput_dir):
             return False
-        if not path_dir.endswith("/"):
-            path_dir += "/"
+        if not ouput_dir.endswith("/"):
+            ouput_dir += "/"
         if segment:
             obj.export_measure_segment(ouput_dir+"measure-seg.png")
             obj.export_arm_segment(ouput_dir+"arm-seg.png")
