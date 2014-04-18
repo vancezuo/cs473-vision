@@ -69,7 +69,7 @@ class BaxterObject(object):
         self.uncompress_obj = None
         self.arm_obj = None
         self.compress_obj = []
-        self.compress_force = []
+        #self.compress_force = []
         
         self._measure_size = None # overrides measure_obj if not None
         self._measure_mm = None
@@ -185,25 +185,25 @@ class BaxterObject(object):
     def export_sizes(self, output_path):
         with open(output_path, 'wb') as f:
             writer = csv.writer(f)
-            writer.writerow(["Object", "Width (px)", "Height (px)", 
-                             "Width (mm)", "Height (mm)", "Force (N)",
-                             "Spring Constant (N/mm)"])
+            writer.writerow(["Object", "Width-px", "Height-px", "W-change-px",
+                             "H-change-px", "Width-mm", "Height-mm", 
+                             "W-change-mm", "H-change-mm"])
             
             mm_px = self.get_mm_per_px()
             
             w, h = self.get_measure_size()
-            writer.writerow(["reference-measure", w, h, w*mm_px, h*mm_px, -1, -1])
+            writer.writerow(["reference-measure", w, h, -1, w*mm_px, h*mm_px, -1])
             w, h = self.get_box_size()
-            writer.writerow(["reference-box", w, h, w*mm_px, h*mm_px, -1, -1])
+            writer.writerow(["reference-box", w, h, -1, w*mm_px, h*mm_px, -1])
             
             w, h = self.get_uncompressed_size()
-            writer.writerow(["uncompressed", w, h, w*mm_px, h*mm_px, -1, -1])
+            writer.writerow(["uncompressed", w, h, 0, w*mm_px, h*mm_px, 0])
             compressed_sizes = self.get_compressed_size(all=True)
             for i in range(len(self.compress_obj)):
                 w_c, h_c = compressed_sizes[i]
-                f = self.compress_force[i]
-                h_chg = h - h_c
-                writer.writerow(["compressed-"+str(i), w_c, h_c, w*mm_px, h*mm_px, f, f / h_chg])
+                h_chg = h_c - c
+                writer.writerow(["compressed-"+str(i), w_c, h_c, h_chg, 
+                                 w_c*mm_px, h_c*mm_px, h_chg*mm_px])
         return True  
     
     def set_measure_dimensions(self, mm_per_px):
@@ -449,7 +449,7 @@ class BaxterObject(object):
         self.uncompress_obj.set_rectangle(*rect)
         return True
             
-    def set_compressed_image(self, compressed_path, add=True, force=-1):
+    def set_compressed_image(self, compressed_path, add=True):
         '''
         Loads an image as the target object in compressed form. The compressing
         robot arm is assumed to also be in the image, so areas with the same
@@ -479,10 +479,10 @@ class BaxterObject(object):
             new_obj.set_ignore_color(self._color_low, self._color_high)
         if add:
             self.compress_obj.append(new_obj)
-            self.compress_force.append(force)
+            #self.compress_force.append(force)
         else:
             self.compress_obj = [new_obj]
-            self.compress_force = [force]
+            #self.compress_force = [force]
         return True
     
     def set_compressed_roi(self, x, y, w, h, xy_type="absolute", 
