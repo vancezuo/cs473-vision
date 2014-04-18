@@ -7,7 +7,7 @@ Created on Feb 28, 2014
 import numpy as np
 import cv2
 import os
-from math import sqrt
+from math import sqrt, hypot
 
 class SegmentedObject(object):
     '''
@@ -262,42 +262,52 @@ class SegmentedObject(object):
                          (255,255,255), cv2.cv.CV_FILLED)
         return object_mask
         
-    def get_object_rectangle(self, min_area=False):
+    def get_object_rectangle_size(self, min_area=False):
         '''
-        Computes the upright bounding rectangle of the foreground object.
+        Computes a bounding rectangle of the foreground object, and returns
+        its width and height. For non-upright rectangles, the width 
+        corresponds to the axis closest to x, while the height to the axis
+        closest to y.
         
+        Args:
+            min_area: whether to compute the minimum area bounding rectangle
+                      instead of a simple upright bonding rectangle.
         Returns:
-            A rectangle represented by the tuple (x,y,w,h), where (x,y) are the
-            coordinates of the top-left corner, and (w,h) are the pixel width
-            and height of the rectangle, respectively. Note if no object can 
-            be identified, then (0,0,0,0) is returned.
+            A tuple (w,h) returning the pixel width and height of the bounding
+            rectangle.
         '''
         
-        if min_area:
-            return self.get_object_min_rectangle()
-        contours = self._get_contours()
-        areas = [cv2.contourArea(c) for c in contours]
-        if not areas:
-            return (0, 0, 0, 0)
-        return cv2.boundingRect(contours[np.argmax(areas)])
+        p1, p2, __, p4 = self.get_object_rectangle_points(min_area)
+        d1 = hypot(p2[0] - p1[0], p2[1] - p1[1])
+        d2 = hypot(p4[0] - p1[0], p4[1] - p1[1])
+        if p2[0] - p1[0] != 0: # slope of d1 = infinity
+            s1 = float(p2[1] - p1[1]) / (p2[0] - p1[0])  
+            w, h = (d1, d2) if (-1 < s1 < 1) else (d2, d1)
+        else:
+            w, h = (d2, d1)
+        return (w, h)
     
-    def get_object_min_rectangle(self):
+    def get_object_rectangle_points(self, min_area=False):
         '''
-        Computes the minimum area rectangle of the foreground object.
+        Computes a bounding rectangle of the foreground object, and returns
+        the xy coordinates of its 4 corners.
         
+        Args:
+            min_area: whether to compute the minimum area bounding rectangle
+                      instead of a simple upright bonding rectangle.
         Returns:
-            A rotated rectangle represented by the tuple (x,y,w,h,t), where
-            (x,y) are the coordinates of the top-left corner, (w,h) are the 
-            pixel width and and height of the rectangle, respectively, and
-            t is the angle of rotation.
+            A 4-tuple of pairs representing the rectangle corner coordinates.
         '''
         
         contours = self._get_contours()
         areas = [cv2.contourArea(c) for c in contours]
-        if not areas:
-            return (0, 0, 0, 0, 0)
-        (x, y), (w, h), t = cv2.minAreaRect(contours[np.argmax(areas)])
-        return (x, y, w, h, t)
+        if not areas: # segmentation failed
+            return ((0,0), (0,0), (0,0), (0,0))
+        if min_area:
+            min_rect = cv2.minAreaRect(contours[np.argmax(areas)])
+            return cv2.cv.BoxPoints(min_rect)
+        x, y, w, h = cv2.boundingRect(contours[np.argmax(areas)])
+        return ((x,y), (x+w,y), (x+w,y+h), (x,y+h))
     
     def _get_contours(self):
         '''
