@@ -191,18 +191,19 @@ class BaxterObject(object):
             mm_px = self.get_mm_per_px()
             
             w, h = self.get_measure_size()
-            writer.writerow(["reference-measure", w, h, -1, w*mm_px, h*mm_px, -1])
+            writer.writerow(["reference-measure", w, h, 0, 0, w*mm_px, h*mm_px, 0, 0])
             w, h = self.get_box_size()
-            writer.writerow(["reference-box", w, h, -1, w*mm_px, h*mm_px, -1])
+            writer.writerow(["reference-box", w, h, 0, 0, w*mm_px, h*mm_px, 0, 0])
             
             w, h = self.get_uncompressed_size()
-            writer.writerow(["uncompressed", w, h, 0, w*mm_px, h*mm_px, 0])
+            writer.writerow(["uncompressed", w, h, 0, 0, w*mm_px, h*mm_px, 0, 0])
             compressed_sizes = self.get_compressed_size(all=True)
             for i in range(len(self.compress_obj)):
                 w_c, h_c = compressed_sizes[i]
-                h_chg = h_c - c
-                writer.writerow(["compressed-"+str(i), w_c, h_c, h_chg, 
-                                 w_c*mm_px, h_c*mm_px, h_chg*mm_px])
+                w_chg = w_c - w
+                h_chg = h_c - h
+                writer.writerow(["compressed-"+str(i), w_c, h_c, w_chg, h_chg, 
+                                 w_c*mm_px, h_c*mm_px, w_chg*mm_px, h_chg*mm_px])
         return True  
     
     def set_measure_dimensions(self, mm_per_px):

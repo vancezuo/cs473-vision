@@ -24,23 +24,23 @@ class BaxterExperiment(BaxterObject):
         self.rect = 0 # 0 = none, 1 = upright, 2 = min area
         return
     
-    def export_results(self, ouput_dir, segment=True, roi=False, table=True):
-        if not os.path.isdir(ouput_dir):
+    def export_results(self, output_dir, segment=True, roi=False, table=True):
+        if not os.path.isdir(output_dir):
             return False
-        if not ouput_dir.endswith("/"):
-            ouput_dir += "/"
+        if not output_dir.endswith("/"):
+            output_dir += "/"
         if segment:
-            obj.export_measure_segment(ouput_dir+"measure-seg.png")
-            obj.export_arm_segment(ouput_dir+"arm-seg.png")
-            obj.export_uncompressed_segment(ouput_dir+"obj-seg.png")
-            obj.export_compress_segment(ouput_dir+"objc-seg.png")      
+            self.export_measure_segment(output_dir+"measure-seg.png")
+            self.export_arm_segment(output_dir+"arm-seg.png")
+            self.export_uncompressed_segment(output_dir+"obj-seg.png")
+            self.export_compress_segment(output_dir+"objc-seg.png")      
         if roi:
-            obj.export_measure_roi_segment(ouput_dir+"measure-roi.png")
-            obj.export_arm_roi_segment(ouput_dir+"arm-roi.png")
-            obj.export_uncompressed_roi_segment(ouput_dir+"obj-roi.png")
-            obj.export_compress_roi_segment(ouput_dir+"objc-roi.png")
+            self.export_measure_roi_segment(output_dir+"measure-roi.png")
+            self.export_arm_roi_segment(output_dir+"arm-roi.png")
+            self.export_uncompressed_roi_segment(output_dir+"obj-roi.png")
+            self.export_compress_roi_segment(output_dir+"objc-roi.png")
         if table:
-            obj.export_sizes(example8[0] + "sizes.txt")
+            self.export_sizes(output_dir + "sizes.csv")
         return True
     
     def import_images(self, path_dir): # Caution: very project specific
