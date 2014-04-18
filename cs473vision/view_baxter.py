@@ -20,8 +20,8 @@ class BaxterExperiment(BaxterObject):
         
         self.pos = 0
         self.total = 1
-        self.seg = 0 # 0 = none, 1 = region, 2 = object
-        self.rect = 0 # 0 = none, 1 = upright, 2 = min area
+        self.seg = 1 # 0 = none, 1 = region, 2 = object
+        self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
     def export_results(self, output_dir, segment=True, roi=False, table=True):
@@ -81,8 +81,7 @@ class BaxterExperiment(BaxterObject):
     def display_results(self):
         self.total = 5 + len(self.compress_obj)
         
-        cv2.destroyWindow(self.name)
-        cv2.namedWindow(self.name)
+        #cv2.namedWindow(self.name)
         self._display_update(self.pos)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
                               self.total-1, self._display_update)
@@ -90,7 +89,7 @@ class BaxterExperiment(BaxterObject):
         while True:
             k = cv2.waitKey()
             self.pos = cv2.getTrackbarPos(self.bar, self.name)
-            if k == 27 or k == ord('q'): # ESC
+            if k == 27 or k == ord('q') or k == -1: # ESC or no key press
                 break
             if k == 9: # tab
                 self._display_update(0)
@@ -108,14 +107,17 @@ class BaxterExperiment(BaxterObject):
             else:
                 continue
             self._display_update(self.pos)
-            
-        cv2.destroyAllWindows()
+        
+        cv2.waitKey(-1) # for Linux
+        cv2.destroyWindow(self.name)
+        cv2.imshow(self.name, np.array([0])) # for Linux
         return
                  
     def _display_update(self, index):
         bg_img = cv2.imread(self.bg_path)
         if index == 0:
-            cv2.imshow(self.name, bg_img)
+            # Apply the same blurring filter as in object_detect.py
+            cv2.imshow(self.name, cv2.bilateralFilter(bg_img, 5, 100, 100))
             return
         
         obj = None
