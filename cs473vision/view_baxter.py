@@ -20,27 +20,27 @@ class BaxterExperiment(BaxterObject):
         
         self.pos = 0
         self.total = 1
-        self.seg = 0 # 0 = none, 1 = region, 2 = object
-        self.rect = 0 # 0 = none, 1 = upright, 2 = min area
+        self.seg = 1 # 0 = none, 1 = region, 2 = object
+        self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
-    def export_results(self, ouput_dir, segment=True, roi=False, table=True):
-        if not os.path.isdir(ouput_dir):
+    def export_results(self, output_dir, segment=True, roi=False, table=True):
+        if not os.path.isdir(output_dir):
             return False
-        if not ouput_dir.endswith("/"):
-            ouput_dir += "/"
+        if not output_dir.endswith("/"):
+            output_dir += "/"
         if segment:
-            obj.export_measure_segment(ouput_dir+"measure-seg.png")
-            obj.export_arm_segment(ouput_dir+"arm-seg.png")
-            obj.export_uncompressed_segment(ouput_dir+"obj-seg.png")
-            obj.export_compress_segment(ouput_dir+"objc-seg.png")      
+            self.export_measure_segment(output_dir+"measure-seg.png")
+            self.export_arm_segment(output_dir+"arm-seg.png")
+            self.export_uncompressed_segment(output_dir+"obj-seg.png")
+            self.export_compress_segment(output_dir+"objc-seg.png")      
         if roi:
-            obj.export_measure_roi_segment(ouput_dir+"measure-roi.png")
-            obj.export_arm_roi_segment(ouput_dir+"arm-roi.png")
-            obj.export_uncompressed_roi_segment(ouput_dir+"obj-roi.png")
-            obj.export_compress_roi_segment(ouput_dir+"objc-roi.png")
+            self.export_measure_roi_segment(output_dir+"measure-roi.png")
+            self.export_arm_roi_segment(output_dir+"arm-roi.png")
+            self.export_uncompressed_roi_segment(output_dir+"obj-roi.png")
+            self.export_compress_roi_segment(output_dir+"objc-roi.png")
         if table:
-            obj.export_sizes(example8[0] + "sizes.txt")
+            self.export_sizes(output_dir + "sizes.csv")
         return True
     
     def import_images(self, path_dir): # Caution: very project specific
@@ -81,8 +81,7 @@ class BaxterExperiment(BaxterObject):
     def display_results(self):
         self.total = 5 + len(self.compress_obj)
         
-        cv2.destroyWindow(self.name)
-        cv2.namedWindow(self.name)
+        #cv2.namedWindow(self.name)
         self._display_update(self.pos)
         cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
                               self.total-1, self._display_update)
@@ -90,7 +89,7 @@ class BaxterExperiment(BaxterObject):
         while True:
             k = cv2.waitKey()
             self.pos = cv2.getTrackbarPos(self.bar, self.name)
-            if k == 27 or k == ord('q'): # ESC
+            if k == 27 or k == ord('q') or k == -1: # ESC or no key press
                 break
             if k == 9: # tab
                 self._display_update(0)
@@ -108,8 +107,10 @@ class BaxterExperiment(BaxterObject):
             else:
                 continue
             self._display_update(self.pos)
-            
-        cv2.destroyAllWindows()
+        
+        cv2.waitKey(-1) # for Linux
+        cv2.destroyWindow(self.name)
+        cv2.imshow(self.name, np.array([0])) # for Linux
         return
                  
     def _display_update(self, index):
