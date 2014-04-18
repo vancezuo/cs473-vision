@@ -233,13 +233,20 @@ class SegmentedObject(object):
         color_min = np.asarray(color_min)
         color_max = np.asarray(color_max) 
         fg_img_hsv = cv2.cvtColor(self.fg_img, cv2.COLOR_BGR2HSV)
-        #if color_min[0] > color_max[0]: # hue presumedly "wraps" around
-        #    color_min_upper = [180, color_min[1], color_min[2]]
-        #    color_max_lower = [0, color_max[1], color_max[2]]
-        #    mask_low = cv2.inRange(fg_img_hsv, color_max_lower, color_max)
-        #    mask_high = cv2.inRange(fg_img_hsv, color_min, color_min_upper)
-        #    self.color_mask = cv2.bitwise_or(mask_low, mask_high)
-        self.color_mask = cv2.inRange(fg_img_hsv, color_min, color_max)
+        if color_min[0] > color_max[0]: # hue presumably "wraps" around
+            color_min_upper = np.asarray([180, color_max[1], color_max[2]])
+            color_max_lower = np.asarray([0, color_min[1], color_min[2]])
+            mask_low = cv2.inRange(fg_img_hsv, color_max_lower, color_max)
+            mask_high = cv2.inRange(fg_img_hsv, color_min, color_min_upper)
+            self.color_mask = cv2.bitwise_or(mask_low, mask_high)
+            # cv2.imshow("low", mask_low)
+            # cv2.imshow("high", mask_high)
+            # cv2.imshow("both", self.color_mask)
+            # print color_max_lower, color_max
+            # print color_min, color_min_upper
+            # cv2.waitKey()
+        else:
+            self.color_mask = cv2.inRange(fg_img_hsv, color_min, color_max)
         self.color_mask = cv2.bitwise_not(self.color_mask)
         return True
     

@@ -324,7 +324,7 @@ class BaxterObject(object):
     
     #TODO fine-tune default values    
     def set_arm_image(self, arm_path, hue_tolerance=30, 
-                      saturation_tolerance=256, value_tolerance=256):
+                      saturation_tolerance=128, value_tolerance=128):
         '''
         Loads an image as the arm object, which will be segmented to determine
         its color (which will be ignored in segmentation of the compressed 
@@ -641,11 +641,16 @@ class BaxterObject(object):
         for i in range(3):
             hist = cv2.calcHist([arm_hsv], channels[i], arm_area, [bins[i]], ranges[i])
             densities = []
-            for j in range(bins[i] - tolerances[i] + 1):
-                densities.append(sum(hist[j : j+tolerances[i]]))
+            for j in range(bins[i]):
+                if j+tolerances[i] <= bins[i]:
+                    freq = sum(hist[j : j+tolerances[i]])
+                else:
+                    wrap = j+tolerances[i] - bins[i]
+                    freq = sum(hist[j : bins[i]]) + sum(hist[0 : wrap])
+                densities.append(freq)
             min_value = np.argmax(densities)
             self._color_low.append(min_value)
-            self._color_high.append(min_value + tolerances[i])
+            self._color_high.append((min_value + tolerances[i]) % (bins[i] + 1))
             # Debug
             #np.set_printoptions(suppress=True)
             #print hist
