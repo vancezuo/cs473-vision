@@ -76,7 +76,7 @@ class BaxterExperiment(BaxterObject):
         self.set_uncompressed_roi(x, y, w, h, xy_type, dim_type)
         self.set_compressed_roi(x, y, w, h, xy_type, dim_type)
         self.set_measure_roi(x, y, w, h, xy_type, dim_type)
-        self.set_box_roi (x, y, w, h, xy_type, dim_type)
+        self.set_box_roi(x, y, w, h, xy_type, dim_type)
     
     def display_results(self):
         self.total = 5 + len(self.compress_obj)
@@ -152,42 +152,6 @@ class BaxterExperiment(BaxterObject):
         return
 
 def main():
-#     example8 = ["example8/", "bg.jpg", "ref.jpg", (100,100), False, "arm.jpg", "obj.jpg", "obj-c.jpg", (15,30),(30,40)]
-#  
-#     bg_file = example8[0] + example8[1]
-#     ref_file = example8[0] + example8[2]
-#     width_mm, height_mm = example8[3]
-#     box_file = example8[0] + example8[4] if example8[4] else None
-#     arm_file = example8[0] + example8[5]
-#     obj_file = example8[0] + example8[6]
-#     both_file = example8[0] + example8[7]
-#     x_roi, y_roi = example8[8]
-#     w_roi, h_roi = example8[9]
-#      
-#     obj = BaxterExperiment(bg_file)
-#     obj.set_measure_image(ref_file, width_mm, height_mm)
-#     obj.set_measure_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-#     obj.set_arm_image(arm_file)
-#     obj.set_arm_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-#     obj.set_uncompressed_image(obj_file)
-#     obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-#     obj.set_compressed_image(both_file)
-#     obj.set_compressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    
-#     base = "example9/final trial/"
-#     obj = BaxterExperiment(base+"background.png")
-#     obj.import_images(base)
-#     obj.set_roi(27, 27, 30, 30, "relative", "relative")
-#     
-#     print "Color range:", obj._color_low, obj._color_high  
-#     print "Millimeters / Pixel:", obj.get_mm_per_px()
-#     print "Measure px size:", obj.get_measure_size()
-#     print "Box px size:", obj.get_box_size()
-#     print "Object px size:", obj.get_uncompressed_size()
-#     print "Compressed px size:", obj.get_compressed_size()
-#     
-#     obj.display_results()
-    
     parser = argparse.ArgumentParser(description="Process Baxter experiment images.")  
     parser.add_argument("-v", "--view", action="store_true", 
                         help="display results in window")
