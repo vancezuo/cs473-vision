@@ -186,6 +186,8 @@ class SegmentedObject(object):
                                              cv2.THRESH_BINARY)
         else:
             return False
+	#kernal = np.ones((7,7), np.uint8)
+	#self.fg_mask = cv2.morphologyEx(self.fg_mask, cv2.MORPH_OPEN, kernal)
         return True
 
     def set_rectangle(self, x, y, width, height):
