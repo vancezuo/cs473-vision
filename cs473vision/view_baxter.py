@@ -24,24 +24,32 @@ class BaxterExperiment(BaxterObject):
         self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
-    def export_results(self, output_dir, segment=True, roi=False, table=True):
+    def export_results(self, output_dir, segment=False, roi=False, table=True):
         if not os.path.isdir(output_dir):
             return False
         if not output_dir.endswith("/"):
             output_dir += "/"
         if segment:
-            self.export_measure_segment(output_dir+"measure-seg.png")
+            self.export_measure_segment(output_dir+"reference-seg.png")
             self.export_arm_segment(output_dir+"arm-seg.png")
             self.export_uncompressed_segment(output_dir+"obj-seg.png")
             self.export_compress_segment(output_dir+"objc-seg.png")      
         if roi:
-            self.export_measure_roi_segment(output_dir+"measure-roi.png")
+            self.export_measure_roi_segment(output_dir+"reference-roi.png")
             self.export_arm_roi_segment(output_dir+"arm-roi.png")
             self.export_uncompressed_roi_segment(output_dir+"obj-roi.png")
             self.export_compress_roi_segment(output_dir+"objc-roi.png")
         if table:
             self.export_sizes(output_dir + "sizes.csv")
         return True
+
+    def print_results(self):
+        print "Color range:", self._color_low, self._color_high  
+        print "Millimeters / Pixel:", self.get_mm_per_px()
+        print "Measure object size (px):", self.get_measure_size()
+        print "Box object size (px):", self.get_box_size()
+        print "Object object size (px):", self.get_uncompressed_size()
+        print "Compressed object size (px):", self.get_compressed_size()
     
     def import_images(self, path_dir): # Caution: very project specific
         if not os.path.isdir(path_dir):
@@ -56,7 +64,7 @@ class BaxterExperiment(BaxterObject):
                     break
         if not self.bg_path:
             return False
-        for file in os.listdir(path_dir):
+        for file in sorted(os.listdir(path_dir)):
             if file.endswith(".png") or file.endswith(".jpg"):
                 name = os.path.splitext(file)[0]
                 if name == "reference" or name == "ref":
@@ -159,8 +167,10 @@ def main():
                         help="display results in window")
     parser.add_argument("-e", "--export", nargs=1, metavar="DIR",
                         help="export results to file directory")
-    parser.add_argument("-d", "--dir", nargs=1, 
+    parser.add_argument("-i", "--import", nargs=1, metavar="DIR", dest="dir",
                         help="load directory path of images to add")
+    parser.add_argument("-ie", nargs=1, metavar="DIR",
+                        help="load directory path of images and export to same")
     parser.add_argument("-b", "--bg", nargs=1, metavar="FILE", 
                         help="add background image")
     parser.add_argument("-m", "--measure", nargs=1, metavar="FILE",
@@ -186,6 +196,11 @@ def main():
         print "Importing files from", args.dir[0], "...",
         baxter.import_images(args.dir[0])
         print "done."
+    elif args.ie:
+        print "Importing files from", args.ie[0], "...",
+        baxter.import_images(args.ie[0])
+        print "done."
+
     if args.bg:
         print "Setting background image to", args.bgv, "...",
         baxter.bg_path = args.bg[0]
@@ -231,17 +246,17 @@ def main():
         print "done."
     if baxter.bg_path:
         print "Baxter experiment successfully loaded. Have some stats:"    
-        print "Color range:", baxter._color_low, baxter._color_high  
-        print "Millimeters / Pixel:", baxter.get_mm_per_px()
-        print "Measure object size (px):", baxter.get_measure_size()
-        print "Box object size (px):", baxter.get_box_size()
-        print "Object object size (px):", baxter.get_uncompressed_size()
-        print "Compressed object size (px):", baxter.get_compressed_size()
+        baxter.print_results()
         
     if args.export:
         print "Exporting results to", args.export[0], "..."
         if not baxter.export_results(args.export[0]):
             print "Nothing written. Are you sure that's a directory?"
+    elif args.ie:
+        print "Exporting results to", args.ie[0], "..."
+        if not baxter.export_results(args.ie[0]):
+            print "Nothing written. Are you sure that's a directory?"        
+
     if args.view:
         print "Opening results window ...",
         baxter.display_results()
