@@ -20,7 +20,7 @@ class BaxterExperiment(BaxterObject):
         
         self.pos = 0
         self.total = 1
-        self.seg = 2 # 0 = none, 1 = region, 2 = object
+        self.seg = 1 # 0 = none, 1 = region, 2 = object
         self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
