@@ -1,7 +1,7 @@
 cs473-vision
 ============
 
-This repository contains object image processing modules for Samuel Goldstein, Thomas Weng, and Vance Zuo's semester project for Yale's CPSC 473 - Intelligent Robotic Lab course.
+This repository contains object image processing modules for Samuel Goldstein, Thomas Weng, and Vance Zuo's semester project for Yale's CPSC 473 - Intelligent Robotics Lab course.
 
 Dependencies / Requirements
 ---------------------------
@@ -99,4 +99,4 @@ The -v option loads a window displaying segmentation results for all of the load
 * Pressing TAB temporarily displays the background image, allowing
   for quick comparison between the background and current image.
 
-Other operating system may also be able to register keyboard input, but it is not guaranteed.
+Other operating systems may also be able to register keyboard input, but it is not guaranteed.
