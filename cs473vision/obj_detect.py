@@ -4,6 +4,7 @@ Created on Feb 28, 2014
 @author: Vance Zuo
 '''
 
+import argparse
 import numpy as np
 import cv2
 import os
@@ -133,7 +134,7 @@ class SegmentedObject(object):
         cv2.imwrite(output_path, self.get_object_mask())
         return
     
-    def export_object_segment(self, output_path):
+    def export_object_segment(self, output_path, draw_rectangle=False):
         '''
         Applies the object mask of the SegmentedObject to its foreground image,
         and writes the result to a user-specified file path.
@@ -144,6 +145,11 @@ class SegmentedObject(object):
         
         obj_mask = self.get_object_mask()
         segment = cv2.bitwise_and(self.fg_img, self.fg_img, mask=obj_mask)
+        if draw_rectangle:
+            points = self.get_object_rectangle_points()
+            white = [255, 255, 255]
+            for i in range(4):
+                cv2.line(segment, points[i], points[(i+1)%4], white) 
         cv2.imwrite(output_path, segment)
         return
             
@@ -186,8 +192,8 @@ class SegmentedObject(object):
                                              cv2.THRESH_BINARY)
         else:
             return False
-	#kernal = np.ones((7,7), np.uint8)
-	#self.fg_mask = cv2.morphologyEx(self.fg_mask, cv2.MORPH_OPEN, kernal)
+    	#kernal = np.ones((7,7), np.uint8)
+    	#self.fg_mask = cv2.morphologyEx(self.fg_mask, cv2.MORPH_OPEN, kernal)
         return True
 
     def set_rectangle(self, x, y, width, height):
@@ -382,32 +388,42 @@ def convert_color_space(color, cv2_conversion_type):
 
 # Test script for SegmentedObject
 def main():
-    tests = [("example1/", "square.jpg", "arm.jpg"),
-             ("example2/", "bg.jpg", "fg1.jpg"),
-             ("example2/", "bg.jpg", "fg2.jpg"), 
-             ("example3/", "bg.jpg", "fg-nickel.jpg"),
-             ("example3/", "bg.jpg", "fg-penny.jpg"), 
-             ("example3/", "bg.jpg", "fg-penny12.jpg"),
-             ("example4/", "bg.jpg", "fg1.jpg"),
-             ("example4/", "bg.jpg", "fg2.jpg", True),]
-    for test_param in tests:
-        print "Testing:", test_param
-        bg_file = test_param[0] + test_param[1]
-        fg_file = test_param[0] + test_param[2]
-        out_prefix = os.path.splitext(fg_file)[0]
-        obj = SegmentedObject(bg_file, fg_file)
-        if len(test_param) > 3 and test_param[3]:
-            obj.set_ignore_color([0, 0, 0], [180, 255, 96]) # dark colors
-            obj.set_rectangle(450, 100, 300, 225) # random region of focus
-            ignore_mask = cv2.bitwise_and(obj.color_mask, obj.rect_mask)
-            cv2.imwrite(out_prefix + "__ignore.png", ignore_mask)     
-        for method in ["simple", "MOG", "MOG2"]:
-            obj.set_fg_mask_method(method)  
-            x, y, width, height = obj.get_object_rectangle()
-            cv2.rectangle(obj.fg_mask, (x,y), (x+width,y+height), (128,128,128))
-            cv2.imwrite(out_prefix + "_" + method + ".png", obj.fg_mask) 
-            print "Rectangle (" + method + "):", obj.get_object_rectangle() 
-        print   
+    parser = argparse.ArgumentParser(description="Segment object from background.")  
+    parser.add_argument("background", help="path to background image")
+    parser.add_argument("foreground", help="path to foreground image")
+    parser.add_argument("-c", "--color", nargs=6, type=int, 
+                        metavar=("HUE_LOW", "SAT_LOW", "VAL_LOW",
+                                 "HUE_HIGH", "SAT_HIGH", "VAL_HIGH"),
+                        help="specify ignored color")
+    parser.add_argument("-r", "--rectangle", nargs=4, type=int,
+                        metavar=("X", "Y", "WIDTH", "HEIGHT"),
+                        help="specify rectangle region of interest")
+    parser.add_argument("-m", "--method", default="simple",
+                        help="specify segmentation method")
+    args = parser.parse_args()
+    
+    print "Importing images:", args.background+",", args.foreground
+    obj = SegmentedObject(args.background, args.foreground)
+    if args.color:
+        color_low = [args.color[0], args.color[1], args.color[2]]
+        color_high = [args.color[3], args.color[4], args.color[5]]
+        print "Setting ignored color range:", color_low, "-", color_high
+        obj.set_ignore_color(color_low, color_high)
+    if args.rectangle:
+        print "Setting rectangle region of interest:", args.rectangle
+        obj.set_rectangle(args.rectangle[0], args.rectangle[1], 
+                          args.rectangle[2], args.rectangle[3])
+    if args.method:
+        print "Attempt to use segmentation method:", args.method
+        obj.set_fg_mask_method(args.method)
+        
+    out_prefix = os.path.splitext(args.foreground)[0]
+    print "Writing result images to folder:", out_prefix
+    if args.color or args.rectangle:
+        obj.export_region_segment(out_prefix + "__roi.png")    
+    obj.export_object_segment(out_prefix + "_" + args.method + ".png", True) 
+    print "Done! Bounding rectangle size:", obj.get_object_rectangle_size() 
+
     return
     
 if __name__ == "__main__":

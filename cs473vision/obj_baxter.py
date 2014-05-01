@@ -671,8 +671,8 @@ class BaxterObject(object):
             return (x , y, width, height) 
         return (x, y, w, h)
     
-# Test script for BaxterObject
-def main():
+# Old test script for BaxterObject
+# def main():
     # Test arm color subtraction
 #     example5 = ("example5/", "no_arm.png", "arm.png")
 #     print "Testing:", example5
@@ -730,57 +730,57 @@ def main():
 #         obj.export_sizes(out_prefix+"sizes.txt")
 #         print     
 #     return
-    
-    example8 = ["example8/", "bg.jpg", "ref.jpg", (100,100), False, "arm.jpg", "obj.jpg", "obj-c.jpg", (15,30),(30,40)]
-    
-    print "Testing:", example8
-    
-    bg_file = example8[0] + example8[1]
-    ref_file = example8[0] + example8[2]
-    width_mm, height_mm = example8[3]
-    box_file = example8[0] + example8[4] if example8[4] else None
-    arm_file = example8[0] + example8[5]
-    obj_file = example8[0] + example8[6]
-    both_file = example8[0] + example8[7]
-    x_roi, y_roi = example8[8]
-    w_roi, h_roi = example8[9]
-    
-    obj = BaxterObject(bg_file)
+#     
+#     example8 = ["example8/", "bg.jpg", "ref.jpg", (100,100), False, "arm.jpg", "obj.jpg", "obj-c.jpg", (15,30),(30,40)]
+#     
+#     print "Testing:", example8
+#     
+#     bg_file = example8[0] + example8[1]
+#     ref_file = example8[0] + example8[2]
+#     width_mm, height_mm = example8[3]
+#     box_file = example8[0] + example8[4] if example8[4] else None
+#     arm_file = example8[0] + example8[5]
+#     obj_file = example8[0] + example8[6]
+#     both_file = example8[0] + example8[7]
+#     x_roi, y_roi = example8[8]
+#     w_roi, h_roi = example8[9]
+#     
+#     obj = BaxterObject(bg_file)
 #     obj.set_uncompressed_image(obj_file)
 #     obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    obj.set_measure_image(ref_file, width_mm, height_mm)
-    obj.set_measure_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    obj.set_arm_image(arm_file)
-    obj.set_arm_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    obj.set_uncompressed_image(obj_file)
-    obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    obj.set_compressed_image(both_file)
-    obj.set_compressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
-    
-    print "Color range:", obj._color_low, obj._color_high  
-    print "Millimeters / Pixel:", obj.get_mm_per_px()
-    print "Measure size:", obj.get_measure_size()
-    print "Box size:", obj.get_box_size()
-    print "Object size:", obj.get_uncompressed_size()
-    print "Compressed size:", obj.get_compressed_size()
+#     obj.set_measure_image(ref_file, width_mm, height_mm)
+#     obj.set_measure_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
+#     obj.set_arm_image(arm_file)
+#     obj.set_arm_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
+#     obj.set_uncompressed_image(obj_file)
+#     obj.set_uncompressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
+#     obj.set_compressed_image(both_file)
+#     obj.set_compressed_roi(x_roi, y_roi, w_roi, h_roi, "relative", "relative")
+#     
+#     print "Color range:", obj._color_low, obj._color_high  
+#     print "Millimeters / Pixel:", obj.get_mm_per_px()
+#     print "Measure size:", obj.get_measure_size()
+#     print "Box size:", obj.get_box_size()
+#     print "Object size:", obj.get_uncompressed_size()
+#     print "Compressed size:", obj.get_compressed_size()
 
 #     out_prefix = os.path.splitext(box_file)[0]
 #     obj.export_box_segment(out_prefix+"_segment.png")
-    
-    out_prefix = os.path.splitext(ref_file)[0]
-    obj.export_measure_segment(out_prefix+"_segment.png")
-    
-    out_prefix = os.path.splitext(arm_file)[0]
-    obj.export_arm_segment(out_prefix+"_segment.png")
-    
-    out_prefix = os.path.splitext(obj_file)[0]
-    obj.export_uncompressed_segment(out_prefix+"_segment.png")
-    
-    out_prefix = os.path.splitext(both_file)[0]
-    obj.export_compress_roi_segment(out_prefix+"_roi.png")
-    obj.export_compress_segment(out_prefix+"_segment.png")
-    
-    obj.export_sizes(example8[0] + "sizes.txt")
-    
-if __name__ == "__main__":
-    main() 
+#     
+#     out_prefix = os.path.splitext(ref_file)[0]
+#     obj.export_measure_segment(out_prefix+"_segment.png")
+#     
+#     out_prefix = os.path.splitext(arm_file)[0]
+#     obj.export_arm_segment(out_prefix+"_segment.png")
+#     
+#     out_prefix = os.path.splitext(obj_file)[0]
+#     obj.export_uncompressed_segment(out_prefix+"_segment.png")
+#     
+#     out_prefix = os.path.splitext(both_file)[0]
+#     obj.export_compress_roi_segment(out_prefix+"_roi.png")
+#     obj.export_compress_segment(out_prefix+"_segment.png")
+#     
+#     obj.export_sizes(example8[0] + "sizes.txt")
+#     
+# if __name__ == "__main__":
+#     main() 

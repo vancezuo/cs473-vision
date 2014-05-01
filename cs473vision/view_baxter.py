@@ -167,6 +167,7 @@ class BaxterExperiment(BaxterObject):
         cv2.imshow(self.name, img)
         return
 
+# Test script for BaxterExperiment
 def main():
     parser = argparse.ArgumentParser(description="Process Baxter experiment images.")  
     parser.add_argument("-v", "--view", action="store_true", 
