@@ -20,11 +20,11 @@ class BaxterExperiment(BaxterObject):
         
         self.pos = 0
         self.total = 1
-        self.seg = 2 # 0 = none, 1 = region, 2 = object
+        self.seg = 0 # 0 = none, 1 = region, 2 = object
         self.rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
-    def export_results(self, output_dir, segment=False, roi=False, table=True):
+    def export_results(self, output_dir, segment=True, roi=False, table=True):
         if not os.path.isdir(output_dir):
             return False
         if not output_dir.endswith("/"):
@@ -32,13 +32,13 @@ class BaxterExperiment(BaxterObject):
         if segment:
             self.export_measure_segment(output_dir+"reference-seg.png")
             self.export_arm_segment(output_dir+"arm-seg.png")
-            self.export_uncompressed_segment(output_dir+"obj-seg.png")
-            self.export_compress_segment(output_dir+"objc-seg.png")      
+            self.export_uncompressed_segment(output_dir+"object-seg.png")
+            self.export_compress_segment(output_dir+"compression-seg.png")      
         if roi:
             self.export_measure_roi_segment(output_dir+"reference-roi.png")
             self.export_arm_roi_segment(output_dir+"arm-roi.png")
-            self.export_uncompressed_roi_segment(output_dir+"obj-roi.png")
-            self.export_compress_roi_segment(output_dir+"objc-roi.png")
+            self.export_uncompressed_roi_segment(output_dir+"object-roi.png")
+            self.export_compress_roi_segment(output_dir+"compression-roi.png")
         if table:
             self.export_sizes(output_dir + "sizes.csv")
         return True
@@ -107,6 +107,12 @@ class BaxterExperiment(BaxterObject):
                 cv2.setTrackbarPos(self.bar, self.name, self.pos)
             elif k == ord('d'): # right arrow
                 self.pos = (self.pos + 1) % self.total
+                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+            elif k == ord('A'): # left arrow * 5
+                self.pos = (self.pos - 5) % self.total
+                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+            elif k == ord('D'): # right arrow * 5
+                self.pos = (self.pos + 5) % self.total
                 cv2.setTrackbarPos(self.bar, self.name, self.pos)
             elif k == ord('s'):
                 self.seg = (self.seg + 1) % 3
@@ -249,14 +255,18 @@ def main():
         baxter.print_results()
         
     if args.export:
-        print "Exporting results to", args.export[0], "..."
-        if not baxter.export_results(args.export[0]):
-            print "Nothing written. Are you sure that's a directory?"
+        print "Exporting results to", args.export[0], "...",
+        if baxter.export_results(args.export[0]):
+            print "done."
+        else:
+            print "nothing written. Are you sure that's a directory?"
     elif args.ie:
-        print "Exporting results to", args.ie[0], "..."
-        if not baxter.export_results(args.ie[0]):
-            print "Nothing written. Are you sure that's a directory?"        
-
+        print "Exporting results to", args.ie[0], "...",
+        if baxter.export_results(args.ie[0]):
+            print "done."
+        else:
+            print "nothing written. Are you sure that's a directory?"        
+            
     if args.view:
         print "Opening results window ...",
         baxter.display_results()
