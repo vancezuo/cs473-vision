@@ -1,1 +1,14 @@
+cs473vision/example1
+cs473vision/example2
+cs473vision/example3
+cs473vision/example4
+cs473vision/example5
+cs473vision/example6
+cs473vision/example7
+cs473vision/example8
+cs473vision/example9
+cs473vision/vance-experiment
+cs473vision/vance-experiment.sh
 *.pyc
+.project
+.pydevproject
