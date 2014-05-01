@@ -13,27 +13,65 @@ from obj_detect import SegmentedObject
 from obj_baxter import BaxterObject
 
 class BaxterExperiment(BaxterObject):
-    def __init__(self, bg_file=None):
-        super(BaxterExperiment, self).__init__(bg_file)
-        self.name = "BaxterObject"
-        self.bar = "Image"
+    '''
+    A BaxterExperiment is a BaxterObject with methods to facilitate the 
+    use a BaxterObject's functions. It contains methods for importing images
+    and exporting results en masse, as well as displaying the result images
+    (along with segments and bounding rectangles) in a window.
+    
+    A notable method is display_results(), which brings up result images of
+    the segmentation algorithm in a window. On Windows, it can also accept
+    keyboard input:
         
-        self.pos = 0
-        self.total = 1
-        self.seg = 0 # 0 = none, 1 = region, 2 = object
-        self.rect = 2 # 0 = none, 1 = upright, 2 = min area
+        - Pressing ESC or 'q' closes the window.
+        - Pressing 'a' moves the slider a tick left, and 'A' 5 ticks.
+        - Pressing 'd' moves the slider a tick right, and 'D' 5 ticks.
+        - Pressing 's' toggles what segment of the image to display.
+        - Pressing 'r' toggles what bounding rectangle to display.
+        - Pressing TAB temporarily displays the background image, allowing
+          for quick comparison between the background and current image.
+    
+    '''
+    
+    def __init__(self, bg_file=None):
+        '''
+        Initiates BaxterExperiment, with (optionally) a user-specified 
+        background image.
+        
+        Args:
+            bg_path: file path to background image.
+        '''
+        
+        super(BaxterExperiment, self).__init__(bg_file)
+        self._name = "BaxterObject"
+        self._bar = "Image"
+        
+        self._pos = 0
+        self._total = 1
+        self._seg = 0 # 0 = none, 1 = region, 2 = object
+        self._rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
     def export_results(self, output_dir, segment=True, roi=False, table=True):
+        '''
+        Initiates BaxterExperiment, with (optionally) a user-specified 
+        background image.
+        
+        Args:
+            output_dir: directory path to write output images to.
+        Returns:
+            True if the output directory is valid; false otherwise.
+        '''
+        
         if not os.path.isdir(output_dir):
             return False
         if not output_dir.endswith("/"):
             output_dir += "/"
         if segment:
-            self.export_measure_segment(output_dir+"reference-seg.png")
-            self.export_arm_segment(output_dir+"arm-seg.png")
-            self.export_uncompressed_segment(output_dir+"object-seg.png")
-            self.export_compress_segment(output_dir+"compression-seg.png")      
+            self.export_measure_segment(output_dir+"reference-_seg.png")
+            self.export_arm_segment(output_dir+"arm-_seg.png")
+            self.export_uncompressed_segment(output_dir+"object-_seg.png")
+            self.export_compress_segment(output_dir+"compression-_seg.png")      
         if roi:
             self.export_measure_roi_segment(output_dir+"reference-roi.png")
             self.export_arm_roi_segment(output_dir+"arm-roi.png")
@@ -44,14 +82,41 @@ class BaxterExperiment(BaxterObject):
         return True
 
     def print_results(self):
+        '''
+        Prints out various results of the BaxterExperiment's image processing:
+        the arm color range, the millimeter to pixel conversion factor, the
+        measurement object reference pixel size, the box object size,
+        the uncompressed object pixel size, and the (smallest area) compressed 
+        object pixel size.
+        '''
+        
         print "Color range:", self._color_low, self._color_high  
         print "Millimeters / Pixel:", self.get_mm_per_px()
         print "Measure object size (px):", self.get_measure_size()
         print "Box object size (px):", self.get_box_size()
         print "Object object size (px):", self.get_uncompressed_size()
         print "Compressed object size (px):", self.get_compressed_size()
+        return
     
-    def import_images(self, path_dir): # Caution: very project specific
+    def import_images(self, path_dir): # Caution: very specific
+        '''
+        Loads images from a directory into the BaxterExperiment. The specific 
+        naming convention for the images is as follows: the background image is 
+        "background"/"bg", the reference object image is "reference"/"ref", 
+        the arm image is "arm", the box image is "box", the uncompressed 
+        object image is "object"/"obj", and the compressed object images 
+        start with "compression". Images that are not named this way
+        are ignored.
+        
+        The method only reads PNG or JPG image files. Also note that the 
+        compression images are added in alphabetical order.
+        
+        Args:
+            path_dir: directory path of the images to load.
+        Returns:
+            True if the input directory is valid; false otherwise.
+        '''
+        
         if not os.path.isdir(path_dir):
             return False
         if not path_dir.endswith("/"):
@@ -80,58 +145,98 @@ class BaxterExperiment(BaxterObject):
         return True
     
     def set_roi(self, x, y, w, h, xy_type="absolute", dim_type="absolute"):
+        '''
+        Sets the rectangular region of interest for all images that are loaded
+        into BaxterExperiment.
+        
+        Note that there is no check for validity.
+        
+        Args:
+            x: integer x-value of top-left point of the ROI rectangle.
+            y: integer y-value of top-left point of the ROI rectangle.
+            w: integer width (x-dimension) of the ROI rectangle.
+            h: integer height (y-dimension) of the ROI rectangle.
+            xy_type: 'absolute' if (x,y) are to be interpreted as absolute
+                     pixel values; 'relative' if (x,y) are percentages of 
+                     overall image from which to determine the top-left corner
+                     pixel.
+            dim_type: 'absolute' if (w,h) are to be interpreted as absolute
+                      pixel dimensions; 'relative' if (x,y) are percentages of 
+                      overall image from which to determine pixel dimensions.
+        '''
+        
         self.set_arm_roi(x, y, w, h, xy_type, dim_type)
         self.set_uncompressed_roi(x, y, w, h, xy_type, dim_type)
         self.set_compressed_roi(x, y, w, h, xy_type, dim_type)
         self.set_measure_roi(x, y, w, h, xy_type, dim_type)
         self.set_box_roi(x, y, w, h, xy_type, dim_type)
+        return
     
     def display_results(self):
-        self.total = 5 + len(self.compress_obj)
+        '''
+        Opens a window and displays the results of the BaxterExperiment's
+        segmentation of its object images. The window contains a slider
+        which the user can move to toggle between different image results.
+        It also accepts keyboard input:
         
-        #cv2.namedWindow(self.name)
-        self._display_update(self.pos)
-        cv2.cv.CreateTrackbar(self.bar, self.name, 0, 
-                              self.total-1, self._display_update)
+            - Pressing ESC or 'q' closes the window.
+            - Pressing 'a' moves the slider a tick left, and 'A' 5 ticks.
+            - Pressing 'd' moves the slider a tick right, and 'D' 5 ticks.
+            - Pressing 's' toggles what segment of the image to display.
+            - Pressing 'r' toggles what bounding rectangle to display.
+            - Pressing TAB temporarily displays the background image, allowing
+              for quick comparison between the background and current image.
+            
+        This method does not terminate until the user closes the window. Note 
+        also that the keyboard functions have been tested to only completely 
+        work on Windows.
+        '''
+        
+        self._total = 5 + len(self.compress_obj)
+        
+        #cv2.namedWindow(self._name)
+        self._display_update(self._pos)
+        cv2.cv.CreateTrackbar(self._bar, self._name, 0, 
+                              self._total-1, self._display_update)
         
         while True:
             k = cv2.waitKey()
-            self.pos = cv2.getTrackbarPos(self.bar, self.name)
+            self._pos = cv2.getTrackbarPos(self._bar, self._name)
             if k == 27 or k == ord('q') or k == -1: # ESC or no key press
                 break
             if k == 9: # tab
                 self._display_update(0)
                 cv2.waitKey(500)
             elif k == ord('a'): # left arrow
-                self.pos = (self.pos - 1) % self.total
-                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+                self._pos = (self._pos - 1) % self._total
+                cv2.setTrackbarPos(self._bar, self._name, self._pos)
             elif k == ord('d'): # right arrow
-                self.pos = (self.pos + 1) % self.total
-                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+                self._pos = (self._pos + 1) % self._total
+                cv2.setTrackbarPos(self._bar, self._name, self._pos)
             elif k == ord('A'): # left arrow * 5
-                self.pos = (self.pos - 5) % self.total
-                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+                self._pos = (self._pos - 5) % self._total
+                cv2.setTrackbarPos(self._bar, self._name, self._pos)
             elif k == ord('D'): # right arrow * 5
-                self.pos = (self.pos + 5) % self.total
-                cv2.setTrackbarPos(self.bar, self.name, self.pos)
+                self._pos = (self._pos + 5) % self._total
+                cv2.setTrackbarPos(self._bar, self._name, self._pos)
             elif k == ord('s'):
-                self.seg = (self.seg + 1) % 3
+                self._seg = (self._seg + 1) % 3
             elif k == ord('r'):
-                self.rect = (self.rect + 1) % 3
+                self._rect = (self._rect + 1) % 3
             else:
                 continue
-            self._display_update(self.pos)
+            self._display_update(self._pos)
         
         cv2.waitKey(-1) # for Linux
-        cv2.destroyWindow(self.name)
-        cv2.imshow(self.name, np.array([0])) # for Linux
+        cv2.destroyWindow(self._name)
+        cv2.imshow(self._name, np.array([0])) # for Linux
         return
                  
     def _display_update(self, index):
         bg_img = cv2.imread(self.bg_path)
         if index == 0:
             # Apply the same blurring filter as in object_detect.py
-            cv2.imshow(self.name, cv2.bilateralFilter(bg_img, 5, 100, 100))
+            cv2.imshow(self._name, cv2.bilateralFilter(bg_img, 5, 100, 100))
             return
         
         obj = None
@@ -148,23 +253,23 @@ class BaxterExperiment(BaxterObject):
         
         if obj is None:
             black_img = np.zeros(bg_img.shape[:-1], np.uint8)
-            cv2.imshow(self.name, black_img)
+            cv2.imshow(self._name, black_img)
             return
              
-        if self.seg == 2:
+        if self._seg == 2:
             obj_mask = obj.get_object_mask()
             img = cv2.bitwise_and(obj.fg_img, obj.fg_img, mask=obj_mask)
-        elif self.seg == 1:
+        elif self._seg == 1:
             region_mask = cv2.bitwise_and(obj.rect_mask, obj.color_mask)
             img = cv2.bitwise_and(obj.fg_img, obj.fg_img, mask=region_mask)
         else:
             img = obj.fg_img.copy()
             
-        if self.rect >= 1:
-            points = np.int0(obj.get_object_rectangle_points(self.rect == 2))
+        if self._rect >= 1:
+            points = np.int0(obj.get_object_rectangle_points(self._rect == 2))
             cv2.drawContours(img, [points], 0, (255,255,255), 2)
             
-        cv2.imshow(self.name, img)
+        cv2.imshow(self._name, img)
         return
 
 # Test script for BaxterExperiment
