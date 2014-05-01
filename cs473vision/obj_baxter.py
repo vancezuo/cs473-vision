@@ -41,9 +41,6 @@ class BaxterObject(object):
         arm_obj: SegmentedObject of the robot manipulating arm.
         compress_obj: list of SegmentedObject of target object, compressed 
                       (with the arm presumably in the picture.
-        compress_force: list of force (in Newtons) applied to target object
-                        corresponding to each SegmentedObject in
-                        compress_obj, as specified by the user.
     '''
 
     def __init__(self, bg_path, measure_path=None, box_path=None, obj_path=None, 
