@@ -159,7 +159,7 @@ class BaxterObject(object):
     
     def export_compress_segment(self, output_path, min_area=True, all=False):
         '''
-        Writes a cut-out of the ompressed target object, as segmented by the 
+        Writes a cut-out of the compressed target object, as segmented by the 
         BaxterObject, to an image file. Areas not part of the segmented object 
         are colored black.
         
@@ -182,6 +182,14 @@ class BaxterObject(object):
         return True
     
     def export_sizes(self, output_path):
+        '''
+        Writes in CSV format a table of the BaxterObject's object dimensions,
+        including the reference, box, uncompressed, and compressed objects.
+        
+        Args:
+            output_path: file path of output CSV.
+        '''
+        
         with open(output_path, 'wb') as f:
             writer = csv.writer(f)
             writer.writerow(["Object", "Width-px", "Height-px", "W-change-px",
@@ -207,10 +215,32 @@ class BaxterObject(object):
         return True  
     
     def set_measure_dimensions(self, mm_per_px):
+        '''
+        Hard codes the millimeters per pixel resolution for the images in
+        the BaxterObject. This overrides previous settings, including any
+        determined by measure image segmentation.
+        
+        Args:
+            mm_per_px: millimter per pixel to use.
+        '''
         self._measure_size = mm_per_px
         return True
     
     def set_measure_image(self, measure_path, width_mm, height_mm):
+        '''
+        Loads an image as the measurement reference object, which is segmented
+        to determine the millimeter per pixel resolution of the BaxterObject's
+        images.
+        
+        Args:
+            measure_path: file path to measurement reference box object image. 
+            width_mm: millimeter width of the measure object.
+            height_mm: millimeter height of the measure object.  
+        Returns:
+            True if image was loaded and segmented successfully, and reference
+            box dimension set; false otherwise.
+        '''        
+        
         if measure_path is None:
             return False
         self.measure_obj = SegmentedObject(self.bg_path, measure_path)
@@ -219,6 +249,33 @@ class BaxterObject(object):
         return True       
     
     def set_measure_roi(self, x, y, w, h, xy_type="absolute", dim_type="absolute"):
+        '''
+        Limits to a rectangle area the region that will be processed when 
+        segmenting the measurement reference object. Note that the parameters
+        (x,y) and (w[idth], h[eight]) can be specified in either absolute or 
+        relative (to box image) terms, depending on the value of xy_type and 
+        dim_type. Relative terms are treated as percentages.
+        
+        Note the region of interest can only be set after the measure image has
+        been set.
+        
+        Args:
+            x: integer x-value of top-left point of the ROI rectangle.
+            y: integer y-value of top-left point of the ROI rectangle.
+            w: integer width (x-dimension) of the ROI rectangle.
+            h: integer height (y-dimension) of the ROI rectangle.
+            xy_type: 'absolute' if (x,y) are to be interpreted as absolute
+                     pixel values; 'relative' if (x,y) are percentages of 
+                     overall image from which to determine the top-left corner
+                     pixel.
+            dim_type: 'absolute' if (w,h) are to be interpreted as absolute
+                      pixel dimensions; 'relative' if (x,y) are percentages of 
+                      overall image from which to determine pixel dimensions.
+        Returns:
+            True if parameters represent a rectangle within in the measure 
+            image; false otherwise.
+        '''
+        
         if self.measure_obj is None:
             return False
         rect = self._get_roi(self.measure_obj, x, y, w, h, xy_type, dim_type)
@@ -234,8 +291,6 @@ class BaxterObject(object):
         Args:
             width: pixel width to give to reference object.
             height: pixel height to give to reference object.  
-        Returns:
-            True.
         '''
         
         self._box_size = (width, height)
@@ -321,8 +376,7 @@ class BaxterObject(object):
         self._color_low = color_low
         self._color_high = color_high
         return True
-    
-    #TODO fine-tune default values    
+     
     def set_arm_image(self, arm_path, hue_tolerance=60, 
                       saturation_tolerance=96, value_tolerance=128):
         '''
