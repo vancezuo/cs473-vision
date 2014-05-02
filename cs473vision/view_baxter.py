@@ -52,7 +52,7 @@ class BaxterExperiment(BaxterObject):
         self._rect = 2 # 0 = none, 1 = upright, 2 = min area
         return
     
-    def export_results(self, output_dir, segment=True, roi=False, table=True):
+    def export_results(self, output_dir, segment=True, table=True):
         '''
         Initiates BaxterExperiment, with (optionally) a user-specified 
         background image.
@@ -72,11 +72,6 @@ class BaxterExperiment(BaxterObject):
             self.export_arm_segment(output_dir+"arm-_seg.png")
             self.export_uncompressed_segment(output_dir+"object-_seg.png")
             self.export_compress_segment(output_dir+"compression-_seg.png")      
-        if roi:
-            self.export_measure_roi_segment(output_dir+"reference-roi.png")
-            self.export_arm_roi_segment(output_dir+"arm-roi.png")
-            self.export_uncompressed_roi_segment(output_dir+"object-roi.png")
-            self.export_compress_roi_segment(output_dir+"compression-roi.png")
         if table:
             self.export_sizes(output_dir + "sizes.csv")
         return True
