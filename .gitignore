@@ -9,6 +9,7 @@ cs473vision/example8
 cs473vision/example9
 cs473vision/vance-experiment
 cs473vision/vance-experiment.sh
+cs473vision.cpp
 *.pyc
 .project
 .pydevproject
